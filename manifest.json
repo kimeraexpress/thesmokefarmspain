@@ -1,0 +1,22 @@
+{
+  "name": "The Smoke Farm Spain",
+  "short_name": "TSF Spain",
+  "description": "Private Cannabis Club & Reserve - Barcelona",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c070e",
+  "theme_color": "#120913",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

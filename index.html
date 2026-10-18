@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>THE SMOKE FARM SPAIN | Private Reserve & Club Menu</title>
+  
+  <!-- Favicon & PWA meta -->
+  <link rel="icon"type="image/png"href="assets/favicon.png">
+  <link rel="apple-touch-icon"href="assets/logo-512.png">
+  <meta name="theme-color"content="#120913">
+  <meta name="apple-mobile-web-app-capable"content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style"content="black-translucent">
+  <link rel="manifest"href="manifest.json">
+
+  <!-- Google Fonts: Syne & Outfit -->
+  <link rel="preconnect"href="https://fonts.googleapis.com">
+  <link rel="preconnect"href="https://fonts.gstatic.com"crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Syne:wght@700;800;900&display=swap"rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet"href="css/style.css">
+</head>
+<body>
+
+  <!-- Age Verification Gate (Private Farm / Social Club Membership Gate) -->
+  <div id="ageGateOverlay" class="age-gate-overlay">
+    <div class="age-gate-card">
+      <div class="age-gate-brand">
+        <img src="assets/logo-badge.png" alt="The Smoke Farm Spain" class="age-gate-logo">
+        <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" class="age-gate-wordmark">
+      </div>
+      <h2 class="brand-font gold-gradient-text" style="font-size: 1.35rem; margin-bottom: 8px;" data-i18n="ageTitle">ACCESSO RISERVATO AI SOCI</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 24px;" data-i18n="ageDesc">
+        Sei maggiorenne (+18) e autorizzato ad accedere al catalogo privato del Farm & Social Club di The Smoke Farm Spain?
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="ageGateConfirmBtn" class="btn-primary" style="justify-content: center; width: 100%; font-size: 0.95rem; padding: 13px;" data-i18n="ageEnter">
+          Sì, ho più di 18 anni
+        </button>
+        <button id="ageGateExitBtn" class="btn-glass" style="justify-content: center; width: 100%; font-size: 0.85rem; padding: 10px;" data-i18n="ageExit">
+          Esci
+        </button>
+      </div>
+      <p style="font-size: 0.68rem; color: var(--text-dim); margin-top: 18px;">
+        Barcelona Private Cannabis Collective • 18+ Only
+      </p>
+    </div>
+  </div>
+
+  <!-- Top Announcement / Live Drop Bar -->
+  <div class="status-pill-bar">
+    <div class="status-badge">
+      <span class="pulse-dot"></span>
+      <span data-i18n="liveDrop">THE SMOKE FARM SPAIN</span>
+    </div>
+    <div class="lang-selector">
+      <button class="lang-btn active" data-lang="it">IT</button>
+      <button class="lang-btn" data-lang="es">ES</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <!-- Sticky App Header -->
+  <header class="app-header">
+    <a href="#" class="header-brand">
+      <img src="assets/logo-badge.png" alt="TSF Logo" class="header-logo-img">
+      <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" class="header-wordmark-img">
+    </a>
+    <div class="header-actions">
+      <!-- Floating Audio Toggle -->
+      <button id="soundToggleBtn" class="action-icon-btn" title="Toggle Sound">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      </button>
+
+      <!-- Direct Order Button -->
+      <button class="btn-primary" onclick="handleOrderClick()" style="padding: 8px 16px; font-size: 0.82rem;" title="Ordina Qui">
+        <span>Ordina Qui</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Story Highlights Bar (Instagram-like Stories on Mobile) -->
+  <div class="stories-section">
+    <ul class="stories-list">
+      <li class="story-item"data-story="drops">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/ash-showcase.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">Drops</span>
+      </li>
+      <li class="story-item"data-story="static">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/ash-static.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">Static</span>
+      </li>
+      <li class="story-item"data-story="ice">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/ice-showcase.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">Ice Wash</span>
+      </li>
+      <li class="story-item"data-story="weed">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/weed-showcase.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">Cali Tops</span>
+      </li>
+      <li class="story-item"data-story="drops">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/ash-freshfrozen.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">WPFF</span>
+      </li>
+      <li class="story-item"data-story="static">
+        <div class="story-ring">
+          <div class="story-avatar-wrap">
+            <video class="story-video-thumb"src="assets/videos/ash-mousse.mp4"autoplay muted loop playsinline webkit-playsinline></video>
+          </div>
+        </div>
+        <span class="story-label">Mousse</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Hero Banner with Autoplay Ambient Video & Prominent Brand Showcase -->
+  <section class="hero-banner">
+    <video class="hero-video-bg" src="assets/videos/hero-smoke.mp4" autoplay muted loop playsinline webkit-playsinline></video>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-brand-centerpiece">
+        <div class="hero-logo-halo">
+          <img src="assets/logo-badge.png" alt="The Smoke Farm Spain" class="hero-prominent-logo">
+        </div>
+        <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" class="hero-prominent-wordmark">
+      </div>
+      <div class="hero-tag" data-i18n="heroTag">COLLEZIONE ESCLUSIVA SPAIN</div>
+      <h1 class="hero-title" data-i18n="heroTitle">
+        L'Arte Del Fumo • Spain Reserve
+      </h1>
+      <p class="hero-desc" data-i18n="heroDesc">
+        Genetica pura, qualità e disponibilità
+      </p>
+    </div>
+  </section>
+
+  <!-- Instant Search Field -->
+  <div class="search-filter-section">
+    <div class="search-input-wrap">
+      <svg width="18"height="18"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2">
+        <circle cx="11"cy="11"r="8"></circle>
+        <line x1="21"y1="21"x2="16.65"y2="16.65"></line>
+      </svg>
+      <input type="text"id="searchField"class="search-field"placeholder="Cerca strain, genetica, profilo terpeni...">
+    </div>
+  </div>
+
+  <!-- Main Section / Catalog Section -->
+  <main id="catalogSection">
+    
+    <!-- MAIN CATEGORY TABS: ASH | WEED | ICE -->
+    <nav class="main-categories-nav">
+      <div class="category-tabs-grid">
+        <button class="cat-tab-btn active"data-cat="ASH">
+          <span class="cat-label">ASH</span>
+          <span class="cat-subtitle"data-i18n="catAshSub">Estratti & Hash</span>
+        </button>
+        <button class="cat-tab-btn"data-cat="WEED">
+          <span class="cat-label">WEED</span>
+          <span class="cat-subtitle"data-i18n="catWeedSub">Cali & Top Tops</span>
+        </button>
+        <button class="cat-tab-btn"data-cat="ICE">
+          <span class="cat-label">ICE</span>
+          <span class="cat-subtitle"data-i18n="catIceSub">Ice-o-Lator & Melts</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- DYNAMIC SUBCATEGORIES PILL BAR (Populated dynamically for ASH, WEED, and ICE from Admin) -->
+    <div id="subcategoriesBar" class="ash-subcategories-bar">
+      <div id="subcategoriesTrack" class="subcategories-track">
+        <!-- Subcategory pills injected dynamically via app.js -->
+      </div>
+    </div>
+
+    <!-- Section Title & Counter -->
+    <div class="section-meta-header">
+      <div class="section-title-wrap">
+        <h2 id="sectionHeading"class="section-heading">Catalogo Farm: ASH</h2>
+        <span id="sectionCount"class="section-count-badge">8 drops</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Products Grid (Autoplay Video Cards) -->
+    <div id="productsGrid"class="products-grid">
+      <!-- Product cards injected dynamically via app.js -->
+    </div>
+
+  </main>
+
+
+
+  <!-- Club & Farm Information Section -->
+  <section id="clubInfoSection" style="padding: 24px 16px;">
+    <div class="glass-panel" style="padding: 28px 20px; border-radius: var(--radius-lg); text-align: center;">
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 16px;">
+        <img src="assets/logo-badge.png" alt="TSF Spain" style="width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold-primary); box-shadow: 0 0 26px rgba(229,169,60,0.45); margin-bottom: 12px; object-fit: cover;">
+        <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" style="height: 48px; max-width: 240px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));">
+      </div>
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        Collettivo privato con sede a Barcellona. Offriamo ai nostri membri prodotti artigianali di primissima scelta: Hash statico, Fresh Frozen, Mousse, Dry Sift, Cime Cali Indoor ed estrazioni Ice-o-Lator d'eccellenza.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px;">
+        <span class="meta-pill">Barcelona, Spain</span>
+        <span class="meta-pill">98u Official Batch</span>
+        <span class="meta-pill">100% Solventless</span>
+        <span class="meta-pill">Private Members Only</span>
+      </div>
+      <button class="btn-primary" style="margin: 0 auto;" onclick="handleOrderClick()">
+        Ordina Qui
+      </button>
+    </div>
+  </section>
+
+  <!-- Product Detail Modal Sheet -->
+  <div id="productModal"class="modal-overlay">
+    <div class="modal-content-sheet">
+      <div class="modal-close-bar">
+        <div class="drag-indicator"></div>
+        <button id="closeModalBtn"class="btn-close-modal"></button>
+      </div>
+      
+      <!-- Modal Autoplay Video Hero -->
+      <div class="modal-video-hero">
+        <video id="modalVideo"autoplay muted loop playsinline webkit-playsinline></video>
+      </div>
+
+      <div class="modal-body">
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+          <span id="modalPotency"class="meta-pill potency">78% THC</span>
+          <span id="modalTerpenes"class="meta-pill terpenes">9.2% Terps</span>
+          <span id="modalBadge"class="meta-pill">99% Heads</span>
+        </div>
+
+        <h2 id="modalTitle"class="brand-font"style="font-size: 1.45rem; margin-bottom: 4px;">Titolo Strain</h2>
+        <p id="modalLineage"style="font-size: 0.82rem; color: var(--gold-light); font-weight: 700; margin-bottom: 14px;">Genetica Lineage</p>
+
+        <p id="modalDesc"style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+          Descrizione approfondita della strain e del metodo di estrazione.
+        </p>
+
+        <!-- Aromas -->
+        <div style="margin-bottom: 18px;">
+          <span style="font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 6px;">Profilo Aromatico:</span>
+          <div id="modalAromas"style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Quantity / Format Picker -->
+        <div class="qty-selector-group">
+          <span class="qty-label">Formati Disponibili:</span>
+          <div id="modalQtyOptions"class="qty-options">
+            <!-- Buttons injected via JS -->
+          </div>
+        </div>
+
+        <!-- Modal Bottom Row: Ordina Qui -->
+        <div style="display: flex; align-items: center; justify-content: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="modalOrderBtn"class="btn-primary"style="width: 100%; justify-content: center; padding: 14px 24px; font-size: 1rem;">
+            <span>Ordina Qui</span>
+            <svg width="18"height="18"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Mobile Fixed Bottom Navigation Bar -->
+  <nav class="bottom-nav-bar">
+    <button class="nav-item-btn active"data-nav="home">
+      <svg width="22"height="22"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-item-btn"data-nav="menu">
+      <svg width="22"height="22"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.2">
+        <line x1="8"y1="6"x2="21"y2="6"></line>
+        <line x1="8"y1="12"x2="21"y2="12"></line>
+        <line x1="8"y1="18"x2="21"y2="18"></line>
+        <line x1="3"y1="6"x2="3.01"y2="6"></line>
+        <line x1="3"y1="12"x2="3.01"y2="12"></line>
+        <line x1="3"y1="18"x2="3.01"y2="18"></line>
+      </svg>
+      <span>Menu</span>
+    </button>
+    <button class="nav-item-btn"data-nav="search">
+      <svg width="22"height="22"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.2">
+        <circle cx="11"cy="11"r="8"></circle>
+        <line x1="21"y1="21"x2="16.65"y2="16.65"></line>
+      </svg>
+      <span>Cerca</span>
+    </button>
+    <button class="nav-item-btn order-tab-btn"data-nav="order">
+      <svg width="22"height="22"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.2">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+        <line x1="3"y1="6"x2="21"y2="6"></line>
+        <path d="M16 10a4 4 0 0 1-8 0"></path>
+      </svg>
+      <span class="cart-badge"style="display: none;">0</span>
+      <span>Ordina</span>
+    </button>
+    <button class="nav-item-btn"data-nav="info">
+      <svg width="22"height="22"viewBox="0 0 24 24"fill="none"stroke="currentColor"stroke-width="2.2">
+        <circle cx="12"cy="12"r="10"></circle>
+        <line x1="12"y1="16"x2="12"y2="12"></line>
+        <line x1="12"y1="8"x2="12.01"y2="8"></line>
+      </svg>
+      <span>Club</span>
+    </button>
+  </nav>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 14px;">
+      <img src="assets/logo-badge.png" alt="TSF Spain" class="footer-logo">
+      <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" class="footer-wordmark">
+    </div>
+    <p class="footer-copy">
+      Barcellona, Spagna • Riservato Esclusivamente ai Membri Maggiorenni (+18)<br>
+      © 2026 The Smoke Farm Spain. Tutti i diritti riservati.
+    </p>
+    <div style="margin-top: 14px;">
+      <a href="admin.html" class="admin-access-link" title="Area Riservata Amministratore">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Area Riservata Farm</span>
+      </a>
+    </div>
+  </footer>
+
+  <!-- Data Storage & Synchronization Engine -->
+  <script src="js/storage.js"></script>
+  <!-- Main JavaScript File -->
+  <script src="js/app.js"></script>
+</body>
+</html>

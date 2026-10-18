@@ -1,0 +1,17 @@
+# Ignore temporary and large screen recording files
+Registrazione*.mp4
+*.dll
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor folders
+.vscode/
+.idea/

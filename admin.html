@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>THE SMOKE FARM SPAIN | Pannello Amministrazione</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <meta name="theme-color" content="#120913">
+
+  <!-- Google Fonts: Syne & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet & Admin Specific Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <!-- =================================================================== -->
+  <!--  AUTHENTICATION GATE (Password Lock for Admin)                      -->
+  <!-- =================================================================== -->
+  <div id="adminAuthGate" class="admin-auth-overlay">
+    <div class="admin-auth-card">
+      <div class="auth-brand-header">
+        <img src="assets/logo-badge.png" alt="TSF Spain" class="auth-logo-badge">
+        <img src="assets/brand-wordmark.png" alt="The Smoke Farm Spain" class="auth-wordmark">
+      </div>
+      
+      <h2 class="auth-title">AREA RISERVATA FARM</h2>
+      <p class="auth-subtitle">Inserisci la password di amministrazione per gestire prodotti, video e sottocategorie.</p>
+
+      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+        <div class="auth-input-group">
+          <label for="adminPasswordInput" class="auth-label">PASSWORD ADMIN</label>
+          <div class="password-field-wrapper">
+            <input 
+              type="password" 
+              id="adminPasswordInput" 
+              class="auth-input" 
+              placeholder="Inserisci password..." 
+              required 
+              autocomplete="current-password"
+            >
+            <button type="button" class="btn-toggle-eye" onclick="togglePasswordVisibility('adminPasswordInput', this)" title="Mostra/Nascondi">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <div id="authErrorMsg" class="auth-error-msg"></div>
+        </div>
+
+        <button type="submit" class="btn-primary auth-submit-btn">
+          <span>Accedi al Pannello</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </form>
+
+      <div class="auth-footer-help">
+        <span class="default-pwd-hint">Password predefinita: <strong>tsfspain2026</strong></span>
+        <a href="index.html" class="auth-back-link">← Torna al Menu Principale</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!--  ADMIN DASHBOARD                                                    -->
+  <!-- =================================================================== -->
+  <div id="adminApp" class="admin-app-container">
+    
+    <!-- Top Admin Header -->
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <img src="assets/logo-badge.png" alt="TSF Logo" class="admin-nav-logo">
+        <div class="admin-title-box">
+          <span class="admin-title-main">THE SMOKE FARM SPAIN</span>
+          <span class="admin-title-tag">PANNELLO DI GESTIONE</span>
+        </div>
+      </div>
+
+      <div class="admin-header-right">
+        <a href="index.html" target="_blank" class="admin-link-btn" title="Apri il sito">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          <span class="hide-mobile">Vedi Sito</span>
+        </a>
+
+        <button class="admin-icon-btn" onclick="openPasswordModal()" title="Sicurezza / Cambia Password">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </button>
+
+        <button class="admin-icon-btn btn-logout" onclick="handleAdminLogout()" title="Disconnettiti">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Metrics Bar -->
+    <section class="admin-metrics-bar">
+      <div class="metric-card">
+        <span class="metric-num" id="metricTotalProducts">0</span>
+        <span class="metric-label">PRODOTTI TOTALI</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-num" id="metricAshProducts">0</span>
+        <span class="metric-label">ASH (HASH & ESTRATTI)</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-num" id="metricWeedProducts">0</span>
+        <span class="metric-label">WEED (CALI TOPS)</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-num" id="metricIceProducts">0</span>
+        <span class="metric-label">ICE (MELT & ROSIN)</span>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="admin-tabs-nav">
+      <button class="admin-tab-btn active" data-tab="products" onclick="switchAdminTab('products')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+        </svg>
+        <span>Prodotti & Video</span>
+      </button>
+
+      <button class="admin-tab-btn" data-tab="subcategories" onclick="switchAdminTab('subcategories')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        <span>Sottocategorie</span>
+      </button>
+
+      <button class="admin-tab-btn" data-tab="tools" onclick="switchAdminTab('tools')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Backup & Reset</span>
+      </button>
+    </nav>
+
+    <!-- ================================================================= -->
+    <!--  TAB 1: PRODOTTI & VIDEO                                         -->
+    <!-- ================================================================= -->
+    <main id="tabProducts" class="admin-tab-pane active">
+      
+      <!-- Action Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-search-box">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="adminSearchInput" class="admin-search-input" placeholder="Cerca tra i prodotti..." oninput="handleAdminSearch(this.value)">
+        </div>
+
+        <div class="toolbar-filter-group">
+          <button class="filter-pill active" data-filter-cat="ALL" onclick="filterAdminProducts('ALL')">Tutti</button>
+          <button class="filter-pill" data-filter-cat="ASH" onclick="filterAdminProducts('ASH')">ASH</button>
+          <button class="filter-pill" data-filter-cat="WEED" onclick="filterAdminProducts('WEED')">WEED</button>
+          <button class="filter-pill" data-filter-cat="ICE" onclick="filterAdminProducts('ICE')">ICE</button>
+        </div>
+
+        <button class="btn-primary btn-add-product" onclick="openProductModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Nuovo Prodotto</span>
+        </button>
+      </div>
+
+      <!-- Products Cards Grid -->
+      <div id="adminProductsContainer" class="admin-products-grid">
+        <!-- Products injected dynamically via admin.js -->
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!--  TAB 2: GESTIONE SOTTOCATEGORIE (ASH, WEED, ICE)                  -->
+    <!-- ================================================================= -->
+    <main id="tabSubcategories" class="admin-tab-pane">
+      
+      <div class="subcat-intro-banner">
+        <h3>Gestione Sottocategorie</h3>
+        <p>Aggiungi, modifica il nome o elimina le sottocategorie per <strong>ASH</strong>, <strong>WEED</strong> e <strong>ICE</strong>. Tutte le modifiche appariranno istantaneamente nei filtri del menu del sito principale.</p>
+      </div>
+
+      <div class="categories-management-columns">
+        
+        <!-- ASH Column -->
+        <div class="category-manage-card" data-cat="ASH">
+          <div class="cat-card-header">
+            <div class="cat-title-badge cat-ash">
+              <span>ASH</span>
+              <small>Estratti & Hash</small>
+            </div>
+            <span class="cat-count-pill" id="countAshSubcats">0 sottocategorie</span>
+          </div>
+
+          <div class="add-subcat-form">
+            <input type="text" id="newSubcatInput_ASH" class="admin-text-input" placeholder="Es. STATIC, FRESH FROZEN...">
+            <button class="btn-primary btn-sm" onclick="handleAddSubcategory('ASH')">
+              <span>+ Aggiungi</span>
+            </button>
+          </div>
+
+          <div class="subcat-items-list" id="subcatsList_ASH">
+            <!-- List injected via admin.js -->
+          </div>
+        </div>
+
+        <!-- WEED Column -->
+        <div class="category-manage-card" data-cat="WEED">
+          <div class="cat-card-header">
+            <div class="cat-title-badge cat-weed">
+              <span>WEED</span>
+              <small>Cali & Tops</small>
+            </div>
+            <span class="cat-count-pill" id="countWeedSubcats">0 sottocategorie</span>
+          </div>
+
+          <div class="add-subcat-form">
+            <input type="text" id="newSubcatInput_WEED" class="admin-text-input" placeholder="Es. CALI TOPS, INDOOR...">
+            <button class="btn-primary btn-sm" onclick="handleAddSubcategory('WEED')">
+              <span>+ Aggiungi</span>
+            </button>
+          </div>
+
+          <div class="subcat-items-list" id="subcatsList_WEED">
+            <!-- List injected via admin.js -->
+          </div>
+        </div>
+
+        <!-- ICE Column -->
+        <div class="category-manage-card" data-cat="ICE">
+          <div class="cat-card-header">
+            <div class="cat-title-badge cat-ice">
+              <span>ICE</span>
+              <small>Ice-o-Lator & Melts</small>
+            </div>
+            <span class="cat-count-pill" id="countIceSubcats">0 sottocategorie</span>
+          </div>
+
+          <div class="add-subcat-form">
+            <input type="text" id="newSubcatInput_ICE" class="admin-text-input" placeholder="Es. FULL MELT, 1ST WASH...">
+            <button class="btn-primary btn-sm" onclick="handleAddSubcategory('ICE')">
+              <span>+ Aggiungi</span>
+            </button>
+          </div>
+
+          <div class="subcat-items-list" id="subcatsList_ICE">
+            <!-- List injected via admin.js -->
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ================================================================= -->
+    <!--  TAB 3: BACKUP, IMPORT/EXPORT & STRUMENTI                        -->
+    <!-- ================================================================= -->
+    <main id="tabTools" class="admin-tab-pane">
+      
+      <div class="tools-grid">
+        <!-- Export & Backup Card -->
+        <div class="tool-card">
+          <div class="tool-icon gold">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <h4>Esporta Catalogo (Backup JSON)</h4>
+          <p>Scarica una copia completa di tutti i prodotti, video, formati e sottocategorie configurate. Puoi conservarla come salvataggio di sicurezza.</p>
+          <button class="btn-primary" onclick="TSF_Storage.exportCatalogJson()">
+            <span>Scarica Backup (.JSON)</span>
+          </button>
+        </div>
+
+        <!-- Import Card -->
+        <div class="tool-card">
+          <div class="tool-icon purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h4>Importa Catalogo da File</h4>
+          <p>Carica un file JSON di backup precedentemente esportato per ripristinare o sincronizzare i prodotti su questo dispositivo.</p>
+          <input type="file" id="importJsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleImportCatalogFile(event)">
+          <button class="btn-glass" onclick="document.getElementById('importJsonFileInput').click()">
+            <span>Seleziona File JSON...</span>
+          </button>
+        </div>
+
+        <!-- Reset Card -->
+        <div class="tool-card danger">
+          <div class="tool-icon orange">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+              <path d="M8 16H3v5"></path>
+            </svg>
+          </div>
+          <h4>Ripristina Catalogo Predefinito</h4>
+          <p>Ripristina la lista originale iniziale di 17 prodotti ed estrazioni con i relativi video originali di fabbrica.</p>
+          <button class="btn-danger" onclick="handleResetCatalog()">
+            <span>Ripristina Originale</span>
+          </button>
+        </div>
+
+        <!-- Password Security Card -->
+        <div class="tool-card">
+          <div class="tool-icon green">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h4>Password di Accesso Admin</h4>
+          <p>Modifica la chiave d'accesso per proteggere questo pannello da accessi non autorizzati.</p>
+          <button class="btn-glass" onclick="openPasswordModal()">
+            <span>Cambia Password</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- =================================================================== -->
+  <!--  PRODUCT FORM MODAL (Add / Edit Product + Video Upload)             -->
+  <!-- =================================================================== -->
+  <div id="productFormModal" class="admin-modal-overlay">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 id="productModalTitle" class="gold-gradient-text">Nuovo Prodotto</h3>
+        <button class="btn-modal-close" onclick="closeProductModal()">×</button>
+      </div>
+
+      <form id="productForm" class="product-edit-form" onsubmit="handleSaveProductForm(event)">
+        <input type="hidden" id="editProductId">
+
+        <div class="form-row">
+          <div class="form-field full">
+            <label for="prodTitle">Nome / Titolo Strain *</label>
+            <input type="text" id="prodTitle" class="admin-text-input" placeholder="Es. Static Sift 99% - Tangie Papaya" required>
+          </div>
+        </div>
+
+        <div class="form-row col-2">
+          <div class="form-field">
+            <label for="prodCategory">Categoria Principale *</label>
+            <select id="prodCategory" class="admin-select" required onchange="handleModalCategoryChange(this.value)">
+              <option value="ASH">ASH (Estratti & Hash)</option>
+              <option value="WEED">WEED (Cali & Top Tops)</option>
+              <option value="ICE">ICE (Ice-o-Lator & Melts)</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <div class="label-with-action">
+              <label for="prodSubcategory">Sottocategoria *</label>
+              <button type="button" class="btn-inline-link" onclick="quickAddSubcatFromModal()">+ Crea Nuova</button>
+            </div>
+            <select id="prodSubcategory" class="admin-select" required>
+              <!-- Dynamic subcategory options -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row col-3">
+          <div class="form-field">
+            <label for="prodLineage">Lineage / Genetica</label>
+            <input type="text" id="prodLineage" class="admin-text-input" placeholder="Es. Tangie x Papaya 90u">
+          </div>
+          <div class="form-field">
+            <label for="prodPotency">Potenza THC</label>
+            <input type="text" id="prodPotency" class="admin-text-input" placeholder="Es. 78% THC">
+          </div>
+          <div class="form-field">
+            <label for="prodTerpenes">Terpeni</label>
+            <input type="text" id="prodTerpenes" class="admin-text-input" placeholder="Es. 9.2% Terps">
+          </div>
+        </div>
+
+        <div class="form-row col-2">
+          <div class="form-field">
+            <label for="prodBadge">Badge / Timbro</label>
+            <input type="text" id="prodBadge" class="admin-text-input" placeholder="Es. 99% Heads Melt, 98u Official Batch">
+          </div>
+          <div class="form-field">
+            <label for="prodFormats">Formati Disponibili (separati da virgola)</label>
+            <input type="text" id="prodFormats" class="admin-text-input" placeholder="Es. 5g, 10g, 25g, 50g, 100g">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field full">
+            <label for="prodAromas">Profili Aromatici (separati da virgola)</label>
+            <input type="text" id="prodAromas" class="admin-text-input" placeholder="Es. Citrus Candy, Sweet Gas, Tropical Papaya">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field full">
+            <label for="prodDesc">Descrizione Prodotto</label>
+            <textarea id="prodDesc" class="admin-textarea" rows="3" placeholder="Descrivi il metodo di estrazione, le caratteristiche olfattive, la cura..."></textarea>
+          </div>
+        </div>
+
+        <!-- Video Upload & Preview Section -->
+        <div class="form-video-box">
+          <div class="video-box-header">
+            <label>VIDEO DEL PRODOTTO (Autoplay Loop 4K)</label>
+            <span class="video-format-badge">MP4 / MOV / WEBM</span>
+          </div>
+
+          <div class="video-upload-controls">
+            <!-- File input -->
+            <input type="file" id="videoFileInput" accept="video/mp4,video/quicktime,video/webm" style="display:none;" onchange="handleVideoFileSelected(event)">
+            <button type="button" class="btn-upload-file" onclick="document.getElementById('videoFileInput').click()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Carica File Video da Dispositivo</span>
+            </button>
+            <span class="or-divider">oppure seleziona video esistente:</span>
+            
+            <select id="prodVideoSelect" class="admin-select" onchange="handleSelectExistingVideo(this.value)">
+              <option value="">-- Seleziona un video --</option>
+              <option value="assets/videos/ash-static.mp4">Static Sift Loop (assets/videos/ash-static.mp4)</option>
+              <option value="assets/videos/ash-freshfrozen.mp4">Fresh Frozen Loop (assets/videos/ash-freshfrozen.mp4)</option>
+              <option value="assets/videos/ash-drysift.mp4">Dry Sift Loop (assets/videos/ash-drysift.mp4)</option>
+              <option value="assets/videos/ash-mousse.mp4">Mousse Whipped Loop (assets/videos/ash-mousse.mp4)</option>
+              <option value="assets/videos/ash-drywork.mp4">Dry Work 98u Loop (assets/videos/ash-drywork.mp4)</option>
+              <option value="assets/videos/ash-showcase.mp4">Drops Showcase Loop (assets/videos/ash-showcase.mp4)</option>
+              <option value="assets/videos/weed-showcase.mp4">Weed Cali Tops Loop (assets/videos/weed-showcase.mp4)</option>
+              <option value="assets/videos/ice-showcase.mp4">Ice-o-Lator Melts Loop (assets/videos/ice-showcase.mp4)</option>
+              <option value="assets/videos/hero-smoke.mp4">Hero Ambient Smoke (assets/videos/hero-smoke.mp4)</option>
+            </select>
+          </div>
+
+          <!-- Video live preview -->
+          <div class="video-preview-wrapper" id="videoPreviewWrap" style="display: none;">
+            <video id="modalPreviewVideo" autoplay muted loop playsinline></video>
+            <div class="preview-overlay-info">
+              <span id="previewVideoName">Video pronto</span>
+              <button type="button" class="btn-remove-preview" onclick="removeSelectedVideo()">Rimuovi</button>
+            </div>
+          </div>
+          <input type="hidden" id="prodVideoPath">
+        </div>
+
+        <!-- Poster Image (Optional) -->
+        <div class="form-row">
+          <div class="form-field full">
+            <label for="prodImage">Immagine Copertina / Poster (Opzionale)</label>
+            <input type="text" id="prodImage" class="admin-text-input" placeholder="Es. assets/products/ash-static-tangie.jpg">
+          </div>
+        </div>
+
+        <!-- Highlight Drop Toggle -->
+        <div class="form-row checkbox-row">
+          <label class="checkbox-container">
+            <input type="checkbox" id="prodHighlight">
+            <span class="checkmark"></span>
+            <span class="checkbox-label">Metti in Evidenza come "Top Drop"</span>
+          </label>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-glass" onclick="closeProductModal()">Annulla</button>
+          <button type="submit" class="btn-primary" id="btnSaveProductSubmit">
+            <span>Salva Prodotto</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- =================================================================== -->
+  <!--  PASSWORD CHANGE MODAL                                              -->
+  <!-- =================================================================== -->
+  <div id="passwordModal" class="admin-modal-overlay">
+    <div class="admin-modal-card small-card">
+      <div class="admin-modal-header">
+        <h3 class="gold-gradient-text">Sicurezza & Password</h3>
+        <button class="btn-modal-close" onclick="closePasswordModal()">×</button>
+      </div>
+
+      <form onsubmit="handleChangePasswordSubmit(event)" style="padding: 20px;">
+        <div class="form-field" style="margin-bottom: 14px;">
+          <label for="oldPwdInput">Password Attuale</label>
+          <input type="password" id="oldPwdInput" class="admin-text-input" required placeholder="Inserisci password attuale">
+        </div>
+
+        <div class="form-field" style="margin-bottom: 20px;">
+          <label for="newPwdInput">Nuova Password (minimo 4 caratteri)</label>
+          <input type="password" id="newPwdInput" class="admin-text-input" required minlength="4" placeholder="Inserisci nuova password">
+        </div>
+
+        <div id="pwdChangeMsg" class="auth-error-msg" style="margin-bottom: 14px;"></div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn-glass" onclick="closePasswordModal()">Annulla</button>
+          <button type="submit" class="btn-primary">Aggiorna Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="adminToast" class="admin-toast"></div>
+
+  <!-- Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
