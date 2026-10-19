@@ -10,31 +10,6 @@ window.TSF_ORDER_LINK = "#"; // INSERISCI QUI IL LINK QUANDO LO AVRAI!
 
 // Multilingual Dictionary
 const I18N = {
-  it: {
-    liveDrop: "THE SMOKE FARM SPAIN",
-    heroTag: "COLLEZIONE ESCLUSIVA SPAIN",
-    heroTitle: "L'Arte Del Fumo • Spain Reserve",
-    heroDesc: "Genetica pura, qualità e disponibilità",
-    exploreMenu: "Menu & Prodotti",
-    catAsh: "ASH",
-    catAshSub: "Estratti & Hash",
-    catWeed: "WEED",
-    catWeedSub: "Cali & Top Tops",
-    catIce: "ICE",
-    catIceSub: "Ice-o-Lator & Melts",
-    all: "TUTTI",
-    searchPlaceholder: "Cerca strain, genetica, profilo terpeni...",
-    viewDetails: "Dettagli",
-    addOrder: "Ordina Qui",
-    formats: "FORMATI",
-    ageTitle: "ACCESSO RISERVATO AI SOCI",
-    ageDesc: "Sei maggiorenne (+18) e autorizzato ad accedere al catalogo privato del Farm & Social Club di The Smoke Farm Spain?",
-    ageEnter: "Sì, ho più di 18 anni",
-    ageExit: "Esci",
-    filterHeading: "Catalogo Farm",
-    soundOn: "Audio Attivo",
-    soundOff: "Audio Disattivato"
-  },
   es: {
     liveDrop: "THE SMOKE FARM SPAIN",
     heroTag: "COLECCIÓN EXCLUSIVA ESPAÑA",
@@ -44,7 +19,7 @@ const I18N = {
     catAsh: "ASH",
     catAshSub: "Extractos y Hash",
     catWeed: "WEED",
-    catWeedSub: "Cali y Top Tops",
+    catWeedSub: "Cali y Flores Top",
     catIce: "ICE",
     catIceSub: "Ice-o-Lator y Melts",
     all: "TODOS",
@@ -52,13 +27,26 @@ const I18N = {
     viewDetails: "Detalles",
     addOrder: "Pedir Aquí",
     formats: "FORMATOS",
+    formatsAvailable: "Formati Disponibili:",
+    aromaProfile: "Perfil Aromático:",
     ageTitle: "ACCESO EXCLUSIVO PARA SOCIOS",
     ageDesc: "¿Eres mayor de edad (+18) y estás autorizado para consultar el catálogo privado de The Smoke Farm Spain?",
     ageEnter: "Sí, soy mayor de 18",
     ageExit: "Salir",
     filterHeading: "Catálogo Farm",
     soundOn: "Audio Activado",
-    soundOff: "Audio Silenciado"
+    soundOff: "Audio Silenciado",
+    noProducts: "No se encontraron productos para esta búsqueda.",
+    resetFilters: "Restablecer Filtros",
+    dropsCount: "drops",
+    clubDesc: "Colectivo privado con sede en Barcelona. Ofrecemos a nuestros socios productos artesanales de primera calidad: Hash estático, Fresh Frozen, Mousse, Dry Sift, Flores Cali Indoor y extracciones Ice-o-Lator solventless de máxima excelencia.",
+    navHome: "Inicio",
+    navMenu: "Menú",
+    navSearch: "Buscar",
+    navOrder: "Pedir",
+    navClub: "Club",
+    footerCopy: "Barcelona, España • Exclusivo para Socios Mayores de Edad (+18)<br>© 2026 The Smoke Farm Spain. Todos los derechos reservados.",
+    footerAdmin: "Área Reservada Farm"
   },
   en: {
     liveDrop: "THE SMOKE FARM SPAIN",
@@ -77,22 +65,106 @@ const I18N = {
     viewDetails: "Details",
     addOrder: "Order Here",
     formats: "FORMATS",
-    from: "STARTING AT",
-    inquiryTitle: "Your Selection",
-    emptyInquiry: "Your inquiry list is empty. Pick your favorite strains from the menu!",
-    sendWhatsApp: "Order Inquiry via WhatsApp",
-    copyTelegram: "Copy for Telegram",
-    totalEst: "Estimated Total:",
+    formatsAvailable: "Available Formats:",
+    aromaProfile: "Terpene Profile:",
     ageTitle: "MEMBERS ONLY ACCESS",
     ageDesc: "Are you of legal age (18+) and authorized to view the private collective menu of The Smoke Farm Spain?",
     ageEnter: "Yes, I am 18+",
     ageExit: "Exit",
     filterHeading: "Farm Catalog",
     soundOn: "Audio On",
-    soundOff: "Audio Muted"}
+    soundOff: "Audio Muted",
+    noProducts: "No products found matching your search.",
+    resetFilters: "Reset Filters",
+    dropsCount: "drops",
+    clubDesc: "Private collective based in Barcelona. We offer our members top-shelf artisanal craft: Static hash, Fresh Frozen, Mousse, Dry Sift, Cali Indoor flower, and supreme Ice-o-Lator solventless extractions.",
+    navHome: "Home",
+    navMenu: "Menu",
+    navSearch: "Search",
+    navOrder: "Order",
+    navClub: "Club",
+    footerCopy: "Barcelona, Spain • Strictly for Adults Only (+18)<br>© 2026 The Smoke Farm Spain. All rights reserved.",
+    footerAdmin: "Farm Restricted Area"
+  },
+  it: {
+    liveDrop: "THE SMOKE FARM SPAIN",
+    heroTag: "COLLEZIONE ESCLUSIVA SPAIN",
+    heroTitle: "L'Arte Del Fumo • Spain Reserve",
+    heroDesc: "Genetica pura, qualità e disponibilità",
+    exploreMenu: "Menu & Prodotti",
+    catAsh: "ASH",
+    catAshSub: "Estratti & Hash",
+    catWeed: "WEED",
+    catWeedSub: "Cali & Top Tops",
+    catIce: "ICE",
+    catIceSub: "Ice-o-Lator & Melts",
+    all: "TUTTI",
+    searchPlaceholder: "Cerca strain, genetica, profilo terpeni...",
+    viewDetails: "Dettagli",
+    addOrder: "Ordina Qui",
+    formats: "FORMATI",
+    formatsAvailable: "Formati Disponibili:",
+    aromaProfile: "Profilo Aromatico:",
+    ageTitle: "ACCESSO RISERVATO AI SOCI",
+    ageDesc: "Sei maggiorenne (+18) e autorizzato ad accedere al catalogo privato del Farm & Social Club di The Smoke Farm Spain?",
+    ageEnter: "Sì, ho più di 18 anni",
+    ageExit: "Esci",
+    filterHeading: "Catalogo Farm",
+    soundOn: "Audio Attivo",
+    soundOff: "Audio Disattivato",
+    noProducts: "Nessun prodotto trovato per questa ricerca.",
+    resetFilters: "Reset Filtri",
+    dropsCount: "drops",
+    clubDesc: "Collettivo privato con sede a Barcellona. Offriamo ai nostri membri prodotti artigianali di primissima scelta: Hash statico, Fresh Frozen, Mousse, Dry Sift, Cime Cali Indoor ed estrazioni Ice-o-Lator d'eccellenza.",
+    navHome: "Home",
+    navMenu: "Menu",
+    navSearch: "Cerca",
+    navOrder: "Ordina",
+    navClub: "Club",
+    footerCopy: "Barcellona, Spagna • Riservato Esclusivamente ai Membri Maggiorenni (+18)<br>© 2026 The Smoke Farm Spain. Tutti i diritti riservati.",
+    footerAdmin: "Area Riservata Farm"
+  },
+  fr: {
+    liveDrop: "THE SMOKE FARM SPAIN",
+    heroTag: "COLLECTION EXCLUSIVE ESPAGNE",
+    heroTitle: "L'Art De La Fumée • Spain Reserve",
+    heroDesc: "Génétique pure, qualité et disponibilité",
+    exploreMenu: "Menu & Produits",
+    catAsh: "ASH",
+    catAshSub: "Extraits & Hash",
+    catWeed: "WEED",
+    catWeedSub: "Cali & Fleurs Top",
+    catIce: "ICE",
+    catIceSub: "Ice-o-Lator & Melts",
+    all: "TOUS",
+    searchPlaceholder: "Rechercher variété, génétique, terpènes...",
+    viewDetails: "Détails",
+    addOrder: "Commander Ici",
+    formats: "FORMATS",
+    formatsAvailable: "Formats Disponibles :",
+    aromaProfile: "Profil Aromatique :",
+    ageTitle: "ACCÈS RÉSERVÉ AUX MEMBRES",
+    ageDesc: "Êtes-vous majeur (+18) et autorisé à consulter le catalogue privé du Farm & Social Club de The Smoke Farm Spain ?",
+    ageEnter: "Oui, j'ai plus de 18 ans",
+    ageExit: "Quitter",
+    filterHeading: "Catalogue Farm",
+    soundOn: "Son Activé",
+    soundOff: "Son Coupé",
+    noProducts: "Aucun produit trouvé pour cette recherche.",
+    resetFilters: "Réinitialiser les Filtres",
+    dropsCount: "variétés",
+    clubDesc: "Collectif privé basé à Barcelone. Nous proposons à nos membres des produits artisanaux de premier choix : Hash statique, Fresh Frozen, Mousse, Dry Sift, Fleurs Cali Indoor et extractions Ice-o-Lator d'excellence sans solvant.",
+    navHome: "Accueil",
+    navMenu: "Menu",
+    navSearch: "Recherche",
+    navOrder: "Commander",
+    navClub: "Club",
+    footerCopy: "Barcelone, Espagne • Réservé Exclusivement aux Membres Majeurs (+18)<br>© 2026 The Smoke Farm Spain. Tous droits réservés.",
+    footerAdmin: "Espace Réservé Farm"
+  }
 };
 
-let currentLang = 'it';
+let currentLang = localStorage.getItem('tsf_lang') || 'es';
 
 // Comprehensive Product Catalog Database
 const PRODUCTS_DATA = [
@@ -515,6 +587,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.TSF_Storage) {
     await TSF_Storage.init();
   }
+  // Synchronize language buttons with currentLang
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-lang') === currentLang);
+  });
   checkAgeVerification();
   initAutoplayVideos();
   setupEventListeners();
@@ -645,11 +721,8 @@ function setupEventListeners() {
   // Language Switcher
   elements.langBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      elements.langBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentLang = btn.getAttribute('data-lang');
-      updateI18N();
-      renderProducts();
+      const lang = btn.getAttribute('data-lang');
+      setLanguage(lang);
     });
   });
 
@@ -672,6 +745,19 @@ function setupEventListeners() {
   });
 }
 
+// Universal Language Switcher
+window.setLanguage = function(lang) {
+  if (!I18N[lang]) return;
+  currentLang = lang;
+  localStorage.setItem('tsf_lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+  });
+  updateI18N();
+  renderSubcategoriesBar();
+  renderProducts();
+};
+
 // Render Subcategories Bar dynamically for whichever category is active (ASH, WEED, ICE)
 function renderSubcategoriesBar() {
   if (!elements.subcatTrack) return;
@@ -682,11 +768,12 @@ function renderSubcategoriesBar() {
     if (elements.subcatBar) elements.subcatBar.style.display = 'block';
     elements.subcatTrack.innerHTML = '';
 
-    // 'ALL' (TUTTI) pill
+    // 'ALL' pill
     const allPill = document.createElement('button');
     allPill.className = `subcat-pill ${state.activeSubcategory === 'ALL' ? 'active' : ''}`;
     allPill.setAttribute('data-subcat', 'ALL');
-    allPill.innerHTML = `<span>TUTTI</span>`;
+    const allLabel = (I18N[currentLang] && I18N[currentLang].all) || 'ALL';
+    allPill.innerHTML = `<span>${allLabel}</span>`;
     allPill.addEventListener('click', () => {
       selectSubcategory('ALL');
     });
@@ -771,15 +858,15 @@ function renderProducts() {
     catName = `${state.activeCategory} • ${state.activeSubcategory}`;
   }
   elements.sectionHeading.textContent = `${t.filterHeading}: ${catName}`;
-  elements.sectionCount.textContent = `${filtered.length} drops`;
+  elements.sectionCount.textContent = `${filtered.length} ${t.dropsCount || 'drops'}`;
 
   // Render Grid Cards
   elements.productsGrid.innerHTML = '';
   if (filtered.length === 0) {
     elements.productsGrid.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; color: var(--text-muted);">
-        <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Nessun prodotto trovato per questa ricerca.</p>
-        <button class="btn-primary" style="margin-top: 10px;" onclick="resetFilters()">Reset Filtri</button>
+        <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">${t.noProducts || 'Nessun prodotto trovato.'}</p>
+        <button class="btn-primary" style="margin-top: 10px;" onclick="resetFilters()">${t.resetFilters || 'Reset Filtri'}</button>
       </div>
     `;
     return;
@@ -1029,15 +1116,16 @@ function handleStoryClick(type) {
 
 // Multilingual Content Update
 function updateI18N() {
-  const t = I18N[currentLang];
+  const t = I18N[currentLang] || I18N.es;
+  document.documentElement.lang = currentLang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (t[key]) {
+    if (t && t[key]) {
       el.innerHTML = t[key];
     }
   });
 
-  if (elements.searchField) {
-    elements.searchField.placeholder = t.searchPlaceholder;
+  if (elements.searchField && t) {
+    elements.searchField.placeholder = t.searchPlaceholder || '';
   }
 }
