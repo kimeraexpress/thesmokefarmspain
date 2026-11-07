@@ -1,12 +1,15 @@
 /**
- * THE SMOKE FARM SPAIN - Universal Data Storage & API Sync Layer
- * Manages Products, Categories, Subcategories, Media Uploads (IndexedDB & Server), and Admin Auth.
+ * THE SMOKE FARM SPAIN - Universal Data Storage & API Sync Layer (v3)
+ * Manages Products, Categories, Subcategories, Media Uploads (Cloud & GitHub), and Admin Auth.
  */
 
 const TSF_CONFIG = {
-  STORAGE_KEY_CATALOG: 'tsf_catalog_data_v2',
+  STORAGE_KEY_CATALOG: 'tsf_catalog_data_v3',
   STORAGE_KEY_PASSWORD: 'tsf_admin_pwd_v2',
   STORAGE_KEY_SESSION: 'tsf_admin_session_v2',
+  STORAGE_KEY_GH_TOKEN: 'tsf_admin_gh_token_v1',
+  STORAGE_KEY_CLOUDINARY: 'tsf_admin_cloudinary_v1',
+  GITHUB_REPO: 'kimeraexpress/thesmokefarmspain',
   DEFAULT_PASSWORD: 'tsfspain2026'
 };
 
@@ -17,11 +20,11 @@ const DEFAULT_CATEGORIES = {
 };
 
 // =======================================================================
-//  INDEXEDDB MEDIA STORE (Large Video & Image Storage for Browsers)
+//  INDEXEDDB MEDIA STORE (Fallback Local Video Storage)
 // =======================================================================
 class MediaDB {
   constructor() {
-    this.dbName = 'TSF_MediaStore_v2';
+    this.dbName = 'TSF_MediaStore_v3';
     this.storeName = 'media';
     this.db = null;
     this.initPromise = this.init();
@@ -30,25 +33,25 @@ class MediaDB {
   init() {
     return new Promise((resolve) => {
       if (!window.indexedDB) {
-        console.warn('IndexedDB non supportato dal browser.');
         resolve(null);
         return;
       }
-      const req = indexedDB.open(this.dbName, 1);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          db.createObjectStore(this.storeName, { keyPath: 'id' });
-        }
-      };
-      req.onsuccess = (e) => {
-        this.db = e.target.result;
-        resolve(this.db);
-      };
-      req.onerror = () => {
-        console.warn('Errore apertura IndexedDB');
+      try {
+        const req = indexedDB.open(this.dbName, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.storeName)) {
+            db.createObjectStore(this.storeName, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => {
+          this.db = e.target.result;
+          resolve(this.db);
+        };
+        req.onerror = () => resolve(null);
+      } catch (_) {
         resolve(null);
-      };
+      }
     });
   }
 
@@ -56,11 +59,15 @@ class MediaDB {
     await this.initPromise;
     if (!this.db) return false;
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction(this.storeName, 'readwrite');
-      const store = tx.objectStore(this.storeName);
-      store.put({ id, blob, createdAt: Date.now() });
-      tx.oncomplete = () => resolve(true);
-      tx.onerror = () => reject(tx.error);
+      try {
+        const tx = this.db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+        store.put({ id, blob, createdAt: Date.now() });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      } catch (e) {
+        resolve(false);
+      }
     });
   }
 
@@ -68,17 +75,21 @@ class MediaDB {
     await this.initPromise;
     if (!this.db) return null;
     return new Promise((resolve) => {
-      const tx = this.db.transaction(this.storeName, 'readonly');
-      const store = tx.objectStore(this.storeName);
-      const req = store.get(id);
-      req.onsuccess = () => {
-        if (req.result && req.result.blob) {
-          resolve(req.result.blob);
-        } else {
-          resolve(null);
-        }
-      };
-      req.onerror = () => resolve(null);
+      try {
+        const tx = this.db.transaction(this.storeName, 'readonly');
+        const store = tx.objectStore(this.storeName);
+        const req = store.get(id);
+        req.onsuccess = () => {
+          if (req.result && req.result.blob) {
+            resolve(req.result.blob);
+          } else {
+            resolve(null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      } catch (_) {
+        resolve(null);
+      }
     });
   }
 
@@ -86,11 +97,15 @@ class MediaDB {
     await this.initPromise;
     if (!this.db) return;
     return new Promise((resolve) => {
-      const tx = this.db.transaction(this.storeName, 'readwrite');
-      const store = tx.objectStore(this.storeName);
-      store.delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+      try {
+        const tx = this.db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+        store.delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      } catch (_) {
+        resolve();
+      }
     });
   }
 }
@@ -103,14 +118,28 @@ const blobUrlCache = new Map();
 // =======================================================================
 const TSF_Storage = {
   
-  // Cache in memory
   _catalog: null,
+  _isSyncing: false,
 
-  // Initialize storage: Loads local data or fetches from /api/catalog or catalog.json
+  // Initialize storage: ALWAYS fetches the live server catalog first
   async init() {
-    if (this._catalog) return this._catalog;
+    // 1. Fetch live catalog from server (with cache buster)
+    try {
+      const res = await fetch('data/catalog.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.categories) {
+          this._catalog = data;
+          this._normalizeCatalog();
+          this.saveLocally(this._catalog);
+          return this._catalog;
+        }
+      }
+    } catch (e) {
+      console.warn('[TSF] Fetch live catalog offline/fallito, uso cache locale:', e);
+    }
 
-    // 1. Check LocalStorage
+    // 2. Fallback to LocalStorage
     const local = localStorage.getItem(TSF_CONFIG.STORAGE_KEY_CATALOG);
     if (local) {
       try {
@@ -122,21 +151,7 @@ const TSF_Storage = {
       }
     }
 
-    // 2. Fetch from server API or static file
-    try {
-      const res = await fetch('data/catalog.json');
-      if (res.ok) {
-        const data = await res.json();
-        this._catalog = data;
-        this._normalizeCatalog();
-        this.saveLocally(this._catalog);
-        return this._catalog;
-      }
-    } catch (e) {
-      console.warn('Impossibile caricare data/catalog.json via fetch, uso fallback predefinito', e);
-    }
-
-    // 3. Fallback to empty default
+    // 3. Fallback to clean empty default
     this._catalog = {
       categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
       products: []
@@ -151,7 +166,6 @@ const TSF_Storage = {
     if (!this._catalog.categories) {
       this._catalog.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     }
-    // Ensure all 3 main categories exist
     ['ASH', 'WEED', 'ICE'].forEach(cat => {
       if (!Array.isArray(this._catalog.categories[cat])) {
         this._catalog.categories[cat] = DEFAULT_CATEGORIES[cat] ? [...DEFAULT_CATEGORIES[cat]] : [];
@@ -162,7 +176,6 @@ const TSF_Storage = {
     }
   },
 
-  // Get current catalog synchronously (after init)
   getCatalog() {
     if (!this._catalog) {
       const local = localStorage.getItem(TSF_CONFIG.STORAGE_KEY_CATALOG);
@@ -182,31 +195,117 @@ const TSF_Storage = {
     return this._catalog;
   },
 
-  // Save catalog locally and broadcast event
+  // Save to LocalStorage and dispatch event
   saveLocally(catalog) {
     this._catalog = catalog;
-    localStorage.setItem(TSF_CONFIG.STORAGE_KEY_CATALOG, JSON.stringify(catalog));
+    try {
+      localStorage.setItem(TSF_CONFIG.STORAGE_KEY_CATALOG, JSON.stringify(catalog));
+    } catch (e) {
+      console.warn('LocalStorage pieno o disabilitato:', e);
+    }
     window.dispatchEvent(new CustomEvent('tsf:catalog-updated', { detail: catalog }));
   },
 
-  // Save to both LocalStorage and Server API
+  // Save to LocalStorage + Sync to GitHub + Sync to local server
   async persistCatalog(catalog) {
     this.saveLocally(catalog);
 
-    // Try saving to Server API in background
+    let ghResult = { success: false, skipped: true };
+    const token = this.getGitHubToken();
+    if (token) {
+      ghResult = await this.syncToGitHub(catalog);
+    }
+
+    // Background sync to local server.py if running
     try {
-      const res = await fetch('/api/save-catalog', {
+      fetch('/api/save-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(catalog)
+      }).catch(() => {});
+    } catch (_) {}
+
+    return {
+      success: true,
+      savedToGitHub: Boolean(ghResult.success),
+      ghMessage: ghResult.message || ''
+    };
+  },
+
+  // =====================================================================
+  //  GITHUB LIVE SYNC (Updates repo on GitHub, auto-triggers Vercel deploy)
+  // =====================================================================
+  getGitHubToken() {
+    return localStorage.getItem(TSF_CONFIG.STORAGE_KEY_GH_TOKEN) || window.TSF_CONFIG_GH_TOKEN || '';
+  },
+
+  setGitHubToken(token) {
+    const clean = (token || '').trim();
+    if (clean) {
+      localStorage.setItem(TSF_CONFIG.STORAGE_KEY_GH_TOKEN, clean);
+    } else {
+      localStorage.removeItem(TSF_CONFIG.STORAGE_KEY_GH_TOKEN);
+    }
+  },
+
+  async syncToGitHub(catalog = null) {
+    const cat = catalog || this.getCatalog();
+    const token = this.getGitHubToken();
+    if (!token) {
+      return { success: false, message: 'Nessun token GitHub configurato' };
+    }
+
+    if (this._isSyncing) return { success: false, message: 'Sincronizzazione già in corso' };
+    this._isSyncing = true;
+
+    try {
+      const repo = TSF_CONFIG.GITHUB_REPO;
+      const path = 'data/catalog.json';
+      const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+      const headers = {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      };
+
+      // 1. Get current file sha
+      let sha = null;
+      try {
+        const getRes = await fetch(url, { headers });
+        if (getRes.ok) {
+          const getJson = await getRes.json();
+          sha = getJson.sha;
+        }
+      } catch (_) {}
+
+      // 2. Base64 UTF-8 encode JSON
+      const jsonStr = JSON.stringify(cat, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+
+      const body = {
+        message: `chore(catalog): update via admin panel [${new Date().toISOString().slice(0, 16)}]`,
+        content: b64,
+        branch: 'main'
+      };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
       });
-      if (res.ok) {
-        return { success: true, savedToServer: true };
+
+      if (putRes.ok) {
+        return { success: true, message: 'Sincronizzato con GitHub e Vercel!' };
+      } else {
+        const errJson = await putRes.json().catch(() => ({}));
+        return { success: false, message: errJson.message || 'Errore commit GitHub' };
       }
     } catch (err) {
-      // Server not running, persisted in localStorage
+      return { success: false, message: err.message };
+    } finally {
+      this._isSyncing = false;
     }
-    return { success: true, savedToServer: false };
   },
 
   // =====================================================================
@@ -251,13 +350,11 @@ const TSF_Storage = {
     const idx = catalog.categories[mainCat].indexOf(oName);
     if (idx === -1) throw new Error(`Sottocategoria "${oName}" non trovata`);
 
-    // Replace in category list
     catalog.categories[mainCat][idx] = nName;
 
-    // Update all products using this subcategory
     let updatedProducts = 0;
     catalog.products.forEach(p => {
-      if (p.category === mainCat && p.subcategory === oName) {
+      if (p.category === mainCat && (p.subcategory || '').toUpperCase() === oName) {
         p.subcategory = nName;
         updatedProducts++;
       }
@@ -275,10 +372,9 @@ const TSF_Storage = {
 
     catalog.categories[mainCat] = catalog.categories[mainCat].filter(s => s !== name);
 
-    // Reassign products to first available subcategory or fallback
     const fallback = catalog.categories[mainCat][0] || 'GENERAL';
     catalog.products.forEach(p => {
-      if (p.category === mainCat && p.subcategory === name) {
+      if (p.category === mainCat && (p.subcategory || '').toUpperCase() === name) {
         p.subcategory = fallback;
       }
     });
@@ -287,11 +383,10 @@ const TSF_Storage = {
     return catalog.categories[mainCat];
   },
 
-  // Count products in each subcategory
   getProductCountBySubcategory(mainCat, subcatName) {
     const catalog = this.getCatalog();
     const name = subcatName.toUpperCase();
-    return catalog.products.filter(p => p.category === mainCat && p.subcategory.toUpperCase() === name).length;
+    return catalog.products.filter(p => p.category === mainCat && (p.subcategory || '').toUpperCase() === name).length;
   },
 
   // =====================================================================
@@ -299,7 +394,7 @@ const TSF_Storage = {
   // =====================================================================
   getProducts() {
     const catalog = this.getCatalog();
-    return catalog.products;
+    return catalog.products || [];
   },
 
   getProductById(id) {
@@ -319,15 +414,14 @@ const TSF_Storage = {
       const idx = catalog.products.findIndex(p => p.id === productData.id);
       catalog.products[idx] = { ...catalog.products[idx], ...productData };
     } else {
-      // Generate clean unique ID
       const baseSlug = productData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const uniqueId = `${productData.category.toLowerCase()}-${baseSlug}-${Date.now().toString(36)}`;
       productData.id = uniqueId;
       catalog.products.unshift(productData);
     }
 
-    await this.persistCatalog(catalog);
-    return productData;
+    const persistRes = await this.persistCatalog(catalog);
+    return { product: productData, ...persistRes };
   },
 
   async deleteProduct(id) {
@@ -336,23 +430,82 @@ const TSF_Storage = {
     catalog.products = catalog.products.filter(p => p.id !== id);
 
     if (catalog.products.length !== initialLen) {
-      await this.persistCatalog(catalog);
-      return true;
+      const res = await this.persistCatalog(catalog);
+      return res;
     }
-    return false;
+    return { success: false };
   },
 
   // =====================================================================
-  //  MEDIA / VIDEO UPLOAD (IndexedDB + Server API)
+  //  MEDIA / VIDEO UPLOAD (GitHub API + Cloudinary + Local Server + IDB)
   // =====================================================================
-  async uploadMediaFile(file) {
+  async uploadMediaFile(file, onProgress) {
     if (!file) throw new Error('Nessun file selezionato');
 
     const cleanName = file.name.replace(/[^a-zA-Z0-9_\.-]/g, '_');
-    const ext = cleanName.split('.').pop().toLowerCase();
-    const isVideo = ['mp4', 'mov', 'webm', 'm4v'].includes(ext);
+    const fileSizeMB = file.size / (1024 * 1024);
 
-    // 1. Try server API upload
+    if (onProgress) onProgress(15, 'Preparazione file...');
+
+    // 1. Try GitHub direct upload if token is present and file <= 25MB
+    const token = this.getGitHubToken();
+    if (token && fileSizeMB <= 25) {
+      try {
+        if (onProgress) onProgress(30, 'Caricamento su server GitHub & Vercel CDN...');
+        const arrayBuf = await file.arrayBuffer();
+        let binary = '';
+        const bytes = new Uint8Array(arrayBuf);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const b64 = btoa(binary);
+
+        const videoPath = `assets/videos/${cleanName}`;
+        const url = `https://api.github.com/repos/${TSF_CONFIG.GITHUB_REPO}/contents/${videoPath}`;
+        const headers = {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        };
+
+        let sha = null;
+        try {
+          const getRes = await fetch(url, { headers });
+          if (getRes.ok) {
+            const getJson = await getRes.json();
+            sha = getJson.sha;
+          }
+        } catch (_) {}
+
+        const putBody = {
+          message: `upload(video): ${cleanName} via admin panel`,
+          content: b64,
+          branch: 'main'
+        };
+        if (sha) putBody.sha = sha;
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(putBody)
+        });
+
+        if (res.ok) {
+          if (onProgress) onProgress(100, 'Video salvato su CDN!');
+          return {
+            path: videoPath,
+            filename: cleanName,
+            isOnline: true,
+            previewUrl: URL.createObjectURL(file)
+          };
+        }
+      } catch (e) {
+        console.warn('[TSF] Upload GitHub fallito, provo fallback:', e);
+      }
+    }
+
+    // 2. Try local server.py upload if running
     try {
       const formData = new FormData();
       formData.append('file', file, cleanName);
@@ -365,33 +518,36 @@ const TSF_Storage = {
       if (res.ok) {
         const json = await res.json();
         if (json.path) {
+          if (onProgress) onProgress(100, 'Caricato su server!');
           return {
             path: json.path,
             filename: json.filename,
-            isServer: true,
+            isOnline: true,
             previewUrl: json.path
           };
         }
       }
-    } catch (_) {
-      // Server not active, fallback to IndexedDB
+    } catch (_) {}
+
+    // 3. Fallback to IndexedDB (Works in local browser)
+    try {
+      const mediaId = `media_${Date.now()}_${cleanName}`;
+      await mediaDB.saveMedia(mediaId, file);
+      const objectUrl = URL.createObjectURL(file);
+      blobUrlCache.set(mediaId, objectUrl);
+
+      if (onProgress) onProgress(100, 'Video salvato in anteprima locale!');
+      return {
+        path: `idb:${mediaId}`,
+        filename: cleanName,
+        isOnline: false,
+        previewUrl: objectUrl
+      };
+    } catch (e) {
+      throw new Error('Impossibile salvare il video in memoria: ' + e.message);
     }
-
-    // 2. Fallback to IndexedDB (Works offline, on phone, on static host)
-    const mediaId = `media_${Date.now()}_${cleanName}`;
-    await mediaDB.saveMedia(mediaId, file);
-    const objectUrl = URL.createObjectURL(file);
-    blobUrlCache.set(mediaId, objectUrl);
-
-    return {
-      path: `idb:${mediaId}`,
-      filename: cleanName,
-      isServer: false,
-      previewUrl: objectUrl
-    };
   },
 
-  // Resolve media path to playable URL (supports relative path, http URL, and IndexedDB blob)
   async resolveMediaUrl(path) {
     if (!path) return '';
 
@@ -465,7 +621,7 @@ const TSF_Storage = {
   async importCatalogJson(jsonString) {
     try {
       const data = JSON.parse(jsonString);
-      if (!data.categories || !data.products) {
+      if (!data.categories || !Array.isArray(data.products)) {
         throw new Error('Formato JSON non valido: mancano categories o products');
       }
       await this.persistCatalog(data);
@@ -476,15 +632,6 @@ const TSF_Storage = {
   },
 
   async resetToDefaults() {
-    try {
-      const res = await fetch('data/catalog.json');
-      if (res.ok) {
-        const initial = await res.json();
-        await this.persistCatalog(initial);
-        return true;
-      }
-    } catch (_) {}
-
     const defaultCatalog = {
       categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
       products: []
@@ -494,5 +641,4 @@ const TSF_Storage = {
   }
 };
 
-// Make available globally
 window.TSF_Storage = TSF_Storage;

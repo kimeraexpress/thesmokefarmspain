@@ -39,6 +39,8 @@ const I18N = {
     noProducts: "No se encontraron productos para esta búsqueda.",
     resetFilters: "Restablecer Filtros",
     dropsCount: "drops",
+    nextDropTitle: "PRÓXIMO DROP EN CAMINO",
+    nextDropDesc: "Los nuevos lotes artesanales Spain Reserve se encuentran en fase de curado y selección. La disponibilidad se publicará muy pronto.",
     clubDesc: "Colectivo privado con sede en Barcelona. Ofrecemos a nuestros socios productos artesanales de primera calidad: Hash estático, Fresh Frozen, Mousse, Dry Sift, Flores Cali Indoor y extracciones Ice-o-Lator solventless de máxima excelencia.",
     navHome: "Inicio",
     navMenu: "Menú",
@@ -77,6 +79,8 @@ const I18N = {
     noProducts: "No products found matching your search.",
     resetFilters: "Reset Filters",
     dropsCount: "drops",
+    nextDropTitle: "NEXT DROP COMING SOON",
+    nextDropDesc: "New artisanal Spain Reserve batches are currently curing and undergoing final selection. Available soon.",
     clubDesc: "Private collective based in Barcelona. We offer our members top-shelf artisanal craft: Static hash, Fresh Frozen, Mousse, Dry Sift, Cali Indoor flower, and supreme Ice-o-Lator solventless extractions.",
     navHome: "Home",
     navMenu: "Menu",
@@ -115,6 +119,8 @@ const I18N = {
     noProducts: "Nessun prodotto trovato per questa ricerca.",
     resetFilters: "Reset Filtri",
     dropsCount: "drops",
+    nextDropTitle: "PROSSIMO DROP IN ARRIVO",
+    nextDropDesc: "I nuovi lotti artigianali Spain Reserve sono in fase di concia e selezione. I prodotti saranno disponibili a breve.",
     clubDesc: "Collettivo privato con sede a Barcellona. Offriamo ai nostri membri prodotti artigianali di primissima scelta: Hash statico, Fresh Frozen, Mousse, Dry Sift, Cime Cali Indoor ed estrazioni Ice-o-Lator d'eccellenza.",
     navHome: "Home",
     navMenu: "Menu",
@@ -153,6 +159,8 @@ const I18N = {
     noProducts: "Aucun produit trouvé pour cette recherche.",
     resetFilters: "Réinitialiser les Filtres",
     dropsCount: "variétés",
+    nextDropTitle: "PROCHAIN DROP BIENTÔT",
+    nextDropDesc: "Les nouvelles récoltes artisanales Spain Reserve sont actuellement en phase d'affinage et de sélection. Disponibles très prochainement.",
     clubDesc: "Collectif privé basé à Barcelone. Nous proposons à nos membres des produits artisanaux de premier choix : Hash statique, Fresh Frozen, Mousse, Dry Sift, Fleurs Cali Indoor et extractions Ice-o-Lator d'excellence sans solvant.",
     navHome: "Accueil",
     navMenu: "Menu",
@@ -167,384 +175,7 @@ const I18N = {
 let currentLang = localStorage.getItem('tsf_lang') || 'es';
 
 // Comprehensive Product Catalog Database
-const PRODUCTS_DATA = [
-  // =================== ASH : STATIC ===================
-  {
-    id: 'ash-static-tangie',
-    title: 'Static Sift 99% - Tangie x Papaya',
-    category: 'ASH',
-    subcategory: 'STATIC',
-    badge: '99% Heads Melt',
-    lineage: 'Tangie x Papaya 90u',
-    potency: '78% THC',
-    terpenes: '9.2% Terps',
-    aromas: ['Citrus Candy', 'Tropical Papaya', 'Sweet Gas'],
-    desc: 'Static sift di pure teste ghiandolari 90u estratto a freddo. Fusione istantanea a contatto con il calore, aroma esplosivo di frutta tropicale e retrogusto gassoso persistente.',
-    image: 'assets/products/ash-static-tangie.jpg',
-    video: 'assets/videos/ash-static.mp4',
-    options: [
-      { qty: '5g', price: 60 },
-      { qty: '10g', price: 110 },
-      { qty: '25g', price: 250 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ash-static-zkittlez',
-    title: 'Static Melt - Zkittlez Diamond',
-    category: 'ASH',
-    subcategory: 'STATIC',
-    badge: 'Full Melt 90u',
-    lineage: 'Original Zkittlez Cut',
-    potency: '81% THC',
-    terpenes: '8.8% Terps',
-    aromas: ['Rainbow Candy', 'Frutti di Bosco', 'Sour Lime'],
-    desc: 'Separazione elettrostatica avanzata. Nessun solvente, solo teste di tricomi dorati che lasciano residuo zero nel banger.',
-    image: 'assets/products/ash-static-zkittlez.jpg',
-    video: 'assets/videos/ash-static.mp4',
-    options: [
-      { qty: '5g', price: 65 },
-      { qty: '10g', price: 120 },
-      { qty: '25g', price: 270 }
-    ],
-    highlight: false
-  },
-
-  // =================== ASH : FRESH FROZEN ===================
-  {
-    id: 'ash-ff-gmo',
-    title: 'Fresh Frozen WPFF - GMO Cookies 73u',
-    category: 'ASH',
-    subcategory: 'FRESH FROZEN',
-    badge: 'Whole Plant Frozen',
-    lineage: 'Chemdog x Girl Scout Cookies',
-    potency: '76% THC',
-    terpenes: '10.4% Terps',
-    aromas: ['Garlic & Onion', 'Earthy Fungus', 'Heavy Fuel'],
-    desc: 'Tagliata e surgelata istantaneamente a -30°C appena raccolta. Profilo terpenico potentissimo e profilo aromatico unico ad altissima intensità.',
-    image: 'assets/products/ash-ff-gmo.jpg',
-    video: 'assets/videos/ash-freshfrozen.mp4',
-    options: [
-      { qty: '5g', price: 50 },
-      { qty: '10g', price: 95 },
-      { qty: '25g', price: 220 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ash-ff-sour',
-    title: 'Fresh Frozen 90u - Sour Diesel Farm Cut',
-    category: 'ASH',
-    subcategory: 'FRESH FROZEN',
-    badge: 'Cold Cured Fresh',
-    lineage: 'East Coast Sour Diesel',
-    potency: '74% THC',
-    terpenes: '8.6% Terps',
-    aromas: ['Raw Kerosene', 'Acidic Lemon', 'Skunk'],
-    desc: 'Incredibile freschezza, sapore agrumato tagliente e combustione chiarissima con cerchio d’olio denso.',
-    image: 'assets/products/ash-ff-sour.jpg',
-    video: 'assets/videos/ash-freshfrozen.mp4',
-    options: [
-      { qty: '5g', price: 55 },
-      { qty: '10g', price: 100 },
-      { qty: '25g', price: 230 }
-    ],
-    highlight: false
-  },
-
-  // =================== ASH : DRY SIFT ===================
-  {
-    id: 'ash-dry-beldia',
-    title: 'Dry Sift 120u - Beldia Gold Reserve',
-    category: 'ASH',
-    subcategory: 'DRY SIFT',
-    badge: '120u Connoisseur',
-    lineage: 'Landrace Ketama Heirloom',
-    potency: '68% THC',
-    terpenes: '6.5% Terps',
-    aromas: ['Honeycomb', 'Spicy Cedar', 'Moroccan Spice'],
-    desc: 'Il sapore autentico dell\'hashish tradizionale rielaborato con standard moderni di filtraggio micronizzato.',
-    image: 'assets/products/ash-dry-beldia.jpg',
-    video: 'assets/videos/ash-drysift.mp4',
-    options: [
-      { qty: '5g', price: 35 },
-      { qty: '10g', price: 65 },
-      { qty: '50g', price: 290 }
-    ],
-    highlight: false
-  },
-  {
-    id: 'ash-dry-biscotti',
-    title: 'Dry Sift 90u - Biscotti Sundae',
-    category: 'ASH',
-    subcategory: 'DRY SIFT',
-    badge: 'Double Filtered',
-    lineage: 'Gelato 25 x South Florida OG',
-    potency: '72% THC',
-    terpenes: '7.8% Terps',
-    aromas: ['Fresh Baked Cookies', 'Dark Cocoa', 'Diesel'],
-    desc: 'Doppia battitura a secco 90 micron. Texture dorata e malleabile, perfetta consistenza e fumo denso e vellutato.',
-    image: 'assets/products/ash-dry-biscotti.jpg',
-    video: 'assets/videos/ash-drysift.mp4',
-    options: [
-      { qty: '5g', price: 40 },
-      { qty: '10g', price: 75 },
-      { qty: '50g', price: 320 }
-    ],
-    highlight: false
-  },
-
-  // =================== ASH : MOUSSE ===================
-  {
-    id: 'ash-mousse-beltz',
-    title: 'Mousse Royale - Rainbow Beltz 2.0',
-    category: 'ASH',
-    subcategory: 'MOUSSE',
-    badge: 'Whipped Butter Texture',
-    lineage: 'Zkittlez x Moonbow #75',
-    potency: '77% THC',
-    terpenes: '9.0% Terps',
-    aromas: ['Sour Candy Chew', 'Creamy Sugar', 'Gas'],
-    desc: 'Consistenza spumosa e burrosa montata a freddo. Si spalma come burro, con profilo terpenico esotico e bolle dorate.',
-    image: 'assets/products/ash-mousse-beltz.jpg',
-    video: 'assets/videos/ash-mousse.mp4',
-    options: [
-      { qty: '5g', price: 45 },
-      { qty: '10g', price: 85 },
-      { qty: '25g', price: 195 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ash-mousse-gelato',
-    title: 'Mousse Terp Cured - Gelato 41 Whipped',
-    category: 'ASH',
-    subcategory: 'MOUSSE',
-    badge: 'Terp Whipped 105u',
-    lineage: 'Sunset Sherbet x Thin Mint GSC',
-    potency: '75% THC',
-    terpenes: '8.4% Terps',
-    aromas: ['Sweet Sherbet', 'Lavender Floral', 'Gas'],
-    desc: 'Curatura speciale che sviluppa una texture setosa e mousse irresistibile con bollicine ricche di essenza aromatica.',
-    image: 'assets/products/ash-mousse-gelato.jpg',
-    video: 'assets/videos/ash-mousse.mp4',
-    options: [
-      { qty: '5g', price: 40 },
-      { qty: '10g', price: 75 },
-      { qty: '25g', price: 175 }
-    ],
-    highlight: false
-  },
-
-  // =================== ASH : DRY WORK ===================
-  {
-    id: 'ash-work-98u',
-    title: 'Dry Work 98u - Farmer Cut Spain TSF',
-    category: 'ASH',
-    subcategory: 'DRY WORK',
-    badge: 'Official 98u Stamp',
-    lineage: 'TSF Farm Selection 98u',
-    potency: '66% THC',
-    terpenes: '5.8% Terps',
-    aromas: ['Dark Earth', 'Forest Pine', 'Black Pepper'],
-    desc: 'Il leggendario panetto con timbro "98u THE SMOKE FARM SPAIN"visibile sul logo ufficiale. Resinoso, scuro all\'esterno, biondo al cuore.',
-    image: 'assets/products/ash-work-98u.jpg',
-    video: 'assets/videos/ash-drywork.mp4',
-    options: [
-      { qty: '10g', price: 50 },
-      { qty: '25g', price: 110 },
-      { qty: '100g', price: 380 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ash-work-gold',
-    title: 'Dry Work Commercial - Gold Batch Cured',
-    category: 'ASH',
-    subcategory: 'DRY WORK',
-    badge: 'Club Daily Work',
-    lineage: 'Commercial Farm Blend',
-    potency: '62% THC',
-    terpenes: '5.0% Terps',
-    aromas: ['Earthy Pollen', 'Dry Wood', 'Subtle Sweet'],
-    desc: 'Lotto da fumo quotidiano per il club, massima resa e gusto pulito e morbido.',
-    image: 'assets/products/ash-work-gold.jpg',
-    video: 'assets/videos/ash-drywork.mp4',
-    options: [
-      { qty: '10g', price: 45 },
-      { qty: '25g', price: 95 },
-      { qty: '100g', price: 340 }
-    ],
-    highlight: false
-  },
-
-  // =================== WEED : TOP SHELF FLOWERS ===================
-  {
-    id: 'weed-zcube',
-    title: 'ZCube - Farm Reserve Exotic',
-    category: 'WEED',
-    subcategory: 'EXOTIC INDOOR',
-    badge: 'Top Shelf Spain Cut',
-    lineage: 'Zkittlez x (Zkittlez x Eddy OG)',
-    potency: '29% THC',
-    terpenes: '4.2% Terps',
-    aromas: ['Tropical Skittles', 'OG Gas', 'Sweet Melon'],
-    desc: 'Fiori densi, calici gonfi e ricoperti da uno strato fitto di tricomi cristallini. Gusto che permane a lungo sul palato con cenere bianca pura.',
-    image: 'assets/products/weed-zcube.jpg',
-    video: 'assets/videos/weed-showcase.mp4',
-    options: [
-      { qty: '3.5g', price: 45 },
-      { qty: '7g', price: 80 },
-      { qty: '14g', price: 150 },
-      { qty: '28g', price: 280 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'weed-marker',
-    title: 'Permanent Marker - Official Cali Cut',
-    category: 'WEED',
-    subcategory: 'CALI GENETICS',
-    badge: 'Leafly Strain of Year',
-    lineage: '(Biscotti x Jealousy) x Sherb Bx',
-    potency: '32% THC',
-    terpenes: '4.8% Terps',
-    aromas: ['Sharpie Pungent Ink', 'Floral Gas', 'Funky Soap'],
-    desc: 'Una delle genetiche più richieste e premiate nei club di Barcellona. Aroma pungente indimenticabile e cime viola/verdi smeraldo.',
-    image: 'assets/products/weed-marker.jpg',
-    video: 'assets/videos/weed-showcase.mp4',
-    options: [
-      { qty: '3.5g', price: 50 },
-      { qty: '7g', price: 90 },
-      { qty: '14g', price: 170 },
-      { qty: '28g', price: 310 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'weed-superboof',
-    title: 'Super Boof - Cherry Trop Pheno',
-    category: 'WEED',
-    subcategory: 'EXOTIC INDOOR',
-    badge: 'AAAA+ Exotic',
-    lineage: 'Black Cherry Punch x Tropicana Cookies',
-    potency: '28% THC',
-    terpenes: '4.5% Terps',
-    aromas: ['Blood Orange', 'Tart Cherry', 'Damp Forest'],
-    desc: 'Esplosione di agrumi rossi e ciliegia frizzante. Effetto euforico e stimolante con gemme compatte e tricomi brillanti.',
-    image: 'assets/products/weed-superboof.jpg',
-    video: 'assets/videos/weed-showcase.mp4',
-    options: [
-      { qty: '3.5g', price: 40 },
-      { qty: '7g', price: 75 },
-      { qty: '14g', price: 140 },
-      { qty: '28g', price: 260 }
-    ],
-    highlight: false
-  },
-  {
-    id: 'weed-rs11',
-    title: 'RS11 (Rainbow Sherbert #11) - Connoisseur',
-    category: 'WEED',
-    subcategory: 'EXOTIC INDOOR',
-    badge: 'Connoisseur Batch',
-    lineage: 'Pink Guava x OZK',
-    potency: '30% THC',
-    terpenes: '4.6% Terps',
-    aromas: ['Sweet Peach', 'Guava Nectar', 'Petrol'],
-    desc: 'Cura meticolosa di 45 giorni a freddo. Calici croccanti, odore penetrante di pesca e benzina.',
-    image: 'assets/products/weed-rs11.jpg',
-    video: 'assets/videos/weed-showcase.mp4',
-    options: [
-      { qty: '3.5g', price: 45 },
-      { qty: '7g', price: 85 },
-      { qty: '14g', price: 160 },
-      { qty: '28g', price: 290 }
-    ],
-    highlight: false
-  },
-
-  // =================== ICE : ICE-O-LATOR & MELTS ===================
-  {
-    id: 'ice-papaya',
-    title: '6-Star Full Melt Ice-o-Lator - Papaya',
-    category: 'ICE',
-    subcategory: 'FULL MELT',
-    badge: '6-Star 1st Wash',
-    lineage: 'Papaya Cut (73u - 90u)',
-    potency: '82% THC',
-    terpenes: '11.2% Terps',
-    aromas: ['Ripe Mango', 'Funky Papaya', 'Candy Gas'],
-    desc: 'Il vertice assoluto delle estrazioni con acqua e ghiaccio. Si vaporizza al 100% senza alcuna traccia di residuo organico nel quarzo.',
-    image: 'assets/products/ice-papaya.jpg',
-    video: 'assets/videos/ice-showcase.mp4',
-    options: [
-      { qty: '2g', price: 70 },
-      { qty: '5g', price: 150 },
-      { qty: '10g', price: 280 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ice-rosin-chem',
-    title: 'Cold Cured Live Ice Rosin - Chem D x GMO',
-    category: 'ICE',
-    subcategory: 'LIVE ROSIN',
-    badge: '1st Press Cold Cured',
-    lineage: 'Chem D x GMO WPFF',
-    potency: '84% THC',
-    terpenes: '12.0% Terps',
-    aromas: ['Heavy Kerosene', 'Roasted Garlic', 'Chemical Dank'],
-    desc: 'Estratto da prima pressata di bubble hash fresh frozen senza solventi. Consistenza budder argentato con pozzanghere di terpeni lucidi.',
-    image: 'assets/products/ice-rosin-chem.jpg',
-    video: 'assets/videos/ice-showcase.mp4',
-    options: [
-      { qty: '2g', price: 75 },
-      { qty: '5g', price: 160 },
-      { qty: '10g', price: 300 }
-    ],
-    highlight: true
-  },
-  {
-    id: 'ice-tropical',
-    title: 'Ice Bubble Hash - Tropical Cookies 73u',
-    category: 'ICE',
-    subcategory: 'BUBBLE HASH',
-    badge: 'Pure Water Hash',
-    lineage: 'Tropicana Cookies x Animal Mintz',
-    potency: '79% THC',
-    terpenes: '9.5% Terps',
-    aromas: ['Candied Tangerine', 'Sweet Mint Cookies', 'Ice Terps'],
-    desc: 'Estrazione in bagno di ghiaccio controllato a 0.5°C. Cristalli di tricoma intatti e fumo morbido dal sapore inebriante.',
-    image: 'assets/products/ice-tropical.jpg',
-    video: 'assets/videos/ice-showcase.mp4',
-    options: [
-      { qty: '3g', price: 55 },
-      { qty: '5g', price: 90 },
-      { qty: '10g', price: 165 }
-    ],
-    highlight: false
-  }
-];
-
-// App State
-const state = {
-  activeCategory: 'ASH', // 'ASH', 'WEED', 'ICE'
-  activeSubcategory: 'ALL', // 'ALL' or specific subcategory name
-  searchQuery: '',
-  isMuted: true,
-  cart: [],
-  selectedModalProduct: null,
-  selectedQtyIndex: 0
-};
-
-// Helper: Get live products from central storage or fallback
-function getCatalogProducts() {
-  if (window.TSF_Storage) {
-    return TSF_Storage.getProducts();
-  }
-  return PRODUCTS_DATA;
-}
+const PRODUCTS_DATA = [];
 
 // DOM Elements
 const elements = {
@@ -863,12 +494,25 @@ function renderProducts() {
   // Render Grid Cards
   elements.productsGrid.innerHTML = '';
   if (filtered.length === 0) {
-    elements.productsGrid.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; color: var(--text-muted);">
-        <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">${t.noProducts || 'Nessun prodotto trovato.'}</p>
-        <button class="btn-primary" style="margin-top: 10px;" onclick="resetFilters()">${t.resetFilters || 'Reset Filtri'}</button>
-      </div>
-    `;
+    if (state.searchQuery) {
+      elements.productsGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; color: var(--text-muted);">
+          <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">${t.noProducts || 'Nessun prodotto trovato.'}</p>
+          <button class="btn-primary" style="margin-top: 10px;" onclick="resetFilters()">${t.resetFilters || 'Reset Filtri'}</button>
+        </div>
+      `;
+    } else {
+      elements.productsGrid.innerHTML = `
+        <div class="empty-drop-card" style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: rgba(229,169,60,0.04); border: 1px solid rgba(229,169,60,0.2); border-radius: var(--radius-lg); margin: 10px 0;">
+          <img src="assets/logo-badge.png" alt="Spain Reserve" style="width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--gold-primary); margin-bottom: 14px; box-shadow: 0 0 18px rgba(229,169,60,0.35);">
+          <h3 class="brand-font gold-gradient-text" style="font-size: 1.25rem; margin-bottom: 8px;">${t.nextDropTitle || 'PROSSIMO DROP IN ARRIVO'}</h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; max-width: 440px; margin: 0 auto 20px auto;">${t.nextDropDesc || 'I nuovi lotti artigianali Spain Reserve sono in fase di concia e selezione.'}</p>
+          <button class="btn-primary" onclick="handleOrderClick()" style="margin: 0 auto;">
+            <span>${t.addOrder || 'Ordina Qui'}</span>
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 

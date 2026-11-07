@@ -1,5 +1,5 @@
 /**
- * THE SMOKE FARM SPAIN - ADMIN PORTAL CONTROLLER
+ * THE SMOKE FARM SPAIN - ADMIN PORTAL CONTROLLER (v3)
  * Full management of Products, Videos, and Dynamic Subcategories (ASH, WEED, ICE)
  */
 
@@ -21,12 +21,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     showAuthGate();
   }
+
+  // Populate GitHub token field if saved
+  const tokenInput = document.getElementById('ghTokenInput');
+  if (tokenInput) {
+    const savedToken = TSF_Storage.getGitHubToken();
+    if (savedToken) {
+      tokenInput.value = savedToken;
+      updateTokenStatusMsg(true);
+    }
+  }
 });
 
 function showAuthGate() {
   document.getElementById('adminAuthGate').style.display = 'flex';
   document.getElementById('adminApp').style.display = 'none';
-  document.getElementById('adminPasswordInput').focus();
+  const pwdInput = document.getElementById('adminPasswordInput');
+  if (pwdInput) pwdInput.focus();
 }
 
 function showDashboard() {
@@ -183,9 +194,20 @@ async function renderProductsList() {
 
   if (products.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted); background: var(--admin-card); border-radius: 16px; border: 1px dashed var(--admin-card-border);">
-        <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Nessun prodotto trovato.</p>
-        <button class="btn-primary" style="margin-top: 10px;" onclick="openProductModal()">+ Crea il primo prodotto</button>
+      <div style="grid-column: 1/-1; text-align: center; padding: 48px 24px; color: var(--text-muted); background: var(--admin-card); border-radius: 16px; border: 1px dashed var(--admin-card-border);">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(229,169,60,0.1); border: 1px solid var(--admin-gold); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--admin-gold);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+        <p style="font-size: 1.15rem; font-weight: 800; color: #FFF; margin-bottom: 6px;">Nessun prodotto presente nel catalogo</p>
+        <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; max-width: 460px; margin-left: auto; margin-right: auto;">
+          I prodotti di esempio provvisori sono stati rimossi. Clicca sul pulsante qui sotto per inserire i tuoi prodotti e caricare i video reali!
+        </p>
+        <button class="btn-primary" style="margin: 0 auto;" onclick="openProductModal()">
+          <span>+ Aggiungi il tuo Primo Prodotto</span>
+        </button>
       </div>
     `;
     return;
@@ -197,7 +219,6 @@ async function renderProductsList() {
     const card = document.createElement('div');
     card.className = 'admin-prod-card';
 
-    // Format tags
     const formatsStr = (product.options || []).map(o => o.qty).join(' • ') || 'Nessun formato';
     const resolvedVideoUrl = await TSF_Storage.resolveMediaUrl(product.video);
 
@@ -206,7 +227,7 @@ async function renderProductsList() {
         <video 
           class="admin-prod-video" 
           src="${resolvedVideoUrl || ''}" 
-          poster="${product.image || ''}" 
+          poster="${product.image || 'assets/logo-badge.png'}" 
           autoplay 
           muted 
           loop 
@@ -239,7 +260,7 @@ async function renderProductsList() {
             </svg>
             <span>Modifica</span>
           </button>
-          <button class="btn-card-action btn-card-delete" onclick="handleDeleteProduct('${product.id}', '${escapeHtml(product.title)}')">
+          <button class="btn-card-action btn-card-delete" onclick="handleDeleteProduct('${product.id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -254,11 +275,18 @@ async function renderProductsList() {
   }
 }
 
-async function handleDeleteProduct(id, title) {
-  if (confirm(`Sei sicuro di voler eliminare il prodotto "${title}"?\nQuesta operazione non può essere annullata.`)) {
-    const success = await TSF_Storage.deleteProduct(id);
-    if (success) {
-      showToast(`Prodotto eliminato.`);
+async function handleDeleteProduct(id) {
+  const p = TSF_Storage.getProductById(id);
+  const title = p ? p.title : 'questo prodotto';
+
+  if (confirm(`Sei sicuro di voler eliminare il prodotto "${title}"?\nQuesta operazione lo rimuoverà dal catalogo.`)) {
+    const res = await TSF_Storage.deleteProduct(id);
+    if (res.success) {
+      if (res.savedToGitHub) {
+        showToast(`Prodotto eliminato e sincronizzato sul sito live!`);
+      } else {
+        showToast(`Prodotto eliminato.`);
+      }
       refreshDashboard();
     }
   }
@@ -350,11 +378,11 @@ async function handleDeleteSubcategory(mainCat, subcatName) {
   const count = TSF_Storage.getProductCountBySubcategory(mainCat, subcatName);
   let confirmMsg = `Vuoi eliminare la sottocategoria "${subcatName}" da ${mainCat}?`;
   if (count > 0) {
-    confirmMsg += `\nAttenzione: ci sono ${count} prodotti collegati che verranno spostati su un'altra sottocategoria.`;
+    confirmMsg += `\nAttenzione: ci sono ${count} prodotti collegati che verranno spostati sulla prima sottocategoria disponibile.`;
   }
 
   if (confirm(confirmMsg)) {
-    await TSF_Storage.deleteCategory(mainCat, subcatName);
+    await TSF_Storage.deleteSubcategory(mainCat, subcatName);
     renderSubcategoriesManagement();
     renderProductsList();
     showToast(`Sottocategoria "${subcatName}" eliminata.`);
@@ -373,6 +401,8 @@ async function openProductModal(productId = null) {
 
   document.getElementById('videoPreviewWrap').style.display = 'none';
   document.getElementById('prodVideoPath').value = '';
+  const uploadProg = document.getElementById('uploadProgressWrap');
+  if (uploadProg) uploadProg.style.display = 'none';
 
   if (productId) {
     modalTitle.textContent = 'Modifica Prodotto';
@@ -383,7 +413,6 @@ async function openProductModal(productId = null) {
     document.getElementById('prodTitle').value = p.title || '';
     document.getElementById('prodCategory').value = p.category || 'ASH';
     
-    // Populate subcategories for this category
     populateModalSubcategories(p.category, p.subcategory);
 
     document.getElementById('prodLineage').value = p.lineage || '';
@@ -417,8 +446,10 @@ async function openProductModal(productId = null) {
 function closeProductModal() {
   document.getElementById('productFormModal').style.display = 'none';
   const vid = document.getElementById('modalPreviewVideo');
-  vid.pause();
-  vid.src = '';
+  if (vid) {
+    vid.pause();
+    vid.src = '';
+  }
   currentEditingProductId = null;
 }
 
@@ -465,20 +496,58 @@ async function quickAddSubcatFromModal() {
   }
 }
 
-// Video handling in modal
+// =======================================================================
+//  VIDEO HANDLING (Direct Link, Device Upload, Preset)
+// =======================================================================
+function handleVideoUrlInput(val) {
+  const clean = (val || '').trim();
+  if (clean) {
+    showVideoPreview(clean, clean.split('/').pop());
+  } else {
+    removeSelectedVideo();
+  }
+}
+
+function previewCurrentVideoUrl() {
+  const val = document.getElementById('prodVideoPath').value.trim();
+  if (!val) {
+    alert('Inserisci prima un link video o seleziona un file');
+    return;
+  }
+  showVideoPreview(val, val.split('/').pop());
+}
+
 async function handleVideoFileSelected(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  showToast('Caricamento video in corso...', 'info');
+  const progWrap = document.getElementById('uploadProgressWrap');
+  const progBar = document.getElementById('uploadProgressBar');
+  const progStatus = document.getElementById('uploadProgressStatus');
+  const progPct = document.getElementById('uploadProgressPercent');
+  const btnLabel = document.getElementById('uploadBtnText');
+
+  if (progWrap) progWrap.style.display = 'block';
+  if (btnLabel) btnLabel.textContent = file.name;
 
   try {
-    const result = await TSF_Storage.uploadMediaFile(file);
+    const result = await TSF_Storage.uploadMediaFile(file, (pct, status) => {
+      if (progBar) progBar.style.width = pct + '%';
+      if (progPct) progPct.textContent = pct + '%';
+      if (progStatus) progStatus.textContent = status;
+    });
+
     document.getElementById('prodVideoPath').value = result.path;
     showVideoPreview(result.previewUrl, result.filename);
-    showToast('Video caricato con successo!');
+
+    if (result.isOnline) {
+      showToast('Video caricato e pronto per la pubblicazione online!');
+    } else {
+      showToast('Video salvato in anteprima locale.');
+    }
   } catch (err) {
     alert('Errore caricamento video: ' + err.message);
+    if (progWrap) progWrap.style.display = 'none';
   }
 }
 
@@ -502,14 +571,25 @@ function showVideoPreview(url, label) {
 
 function removeSelectedVideo() {
   document.getElementById('prodVideoPath').value = '';
-  document.getElementById('prodVideoSelect').value = '';
+  const sel = document.getElementById('prodVideoSelect');
+  if (sel) sel.value = '';
   const vid = document.getElementById('modalPreviewVideo');
-  vid.pause();
-  vid.src = '';
+  if (vid) {
+    vid.pause();
+    vid.src = '';
+  }
+  const fileInput = document.getElementById('videoFileInput');
+  if (fileInput) fileInput.value = '';
+  const btnLabel = document.getElementById('uploadBtnText');
+  if (btnLabel) btnLabel.textContent = 'Seleziona Video dalla Galleria';
+  const progWrap = document.getElementById('uploadProgressWrap');
+  if (progWrap) progWrap.style.display = 'none';
   document.getElementById('videoPreviewWrap').style.display = 'none';
 }
 
-// Save Product Form
+// =======================================================================
+//  SAVE PRODUCT FORM
+// =======================================================================
 async function handleSaveProductForm(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSaveProductSubmit');
@@ -527,18 +607,16 @@ async function handleSaveProductForm(e) {
     const badge = document.getElementById('prodBadge').value.trim();
     const desc = document.getElementById('prodDesc').value.trim();
     
-    // Parse aromas
     const aromasRaw = document.getElementById('prodAromas').value;
     const aromas = aromasRaw.split(',').map(s => s.trim()).filter(Boolean);
 
-    // Parse formats
     const formatsRaw = document.getElementById('prodFormats').value;
     const formatQtys = formatsRaw.split(',').map(s => s.trim()).filter(Boolean);
     const options = formatQtys.length > 0 
       ? formatQtys.map(q => ({ qty: q, price: null })) 
       : [{ qty: '5g', price: null }, { qty: '10g', price: null }];
 
-    const video = document.getElementById('prodVideoPath').value || 'assets/videos/ash-showcase.mp4';
+    const video = document.getElementById('prodVideoPath').value.trim() || 'assets/videos/ash-showcase.mp4';
     const image = document.getElementById('prodImage').value.trim() || 'assets/logo-badge.png';
     const highlight = document.getElementById('prodHighlight').checked;
 
@@ -559,10 +637,15 @@ async function handleSaveProductForm(e) {
     };
     if (id) productData.id = id;
 
-    await TSF_Storage.saveProduct(productData);
+    const res = await TSF_Storage.saveProduct(productData);
     closeProductModal();
     refreshDashboard();
-    showToast(id ? 'Prodotto modificato con successo!' : 'Nuovo prodotto aggiunto con successo!');
+
+    if (res.savedToGitHub) {
+      showToast(id ? 'Prodotto aggiornato e sincronizzato sul sito live!' : 'Nuovo prodotto pubblicato sul sito live!');
+    } else {
+      showToast(id ? 'Prodotto modificato con successo!' : 'Nuovo prodotto aggiunto!');
+    }
   } catch (err) {
     alert('Errore: ' + err.message);
   } finally {
@@ -572,8 +655,42 @@ async function handleSaveProductForm(e) {
 }
 
 // =======================================================================
-//  TAB 3: BACKUP & RESTORE
+//  TAB 3: BACKUP, RESTORE & LIVE GITHUB SYNC
 // =======================================================================
+function handleSaveGitHubToken() {
+  const input = document.getElementById('ghTokenInput');
+  const token = (input.value || '').trim();
+  TSF_Storage.setGitHubToken(token);
+  updateTokenStatusMsg(Boolean(token));
+  showToast(token ? 'Token salvato con successo!' : 'Token rimosso.');
+}
+
+function updateTokenStatusMsg(hasToken) {
+  const msgEl = document.getElementById('tokenStatusMsg');
+  if (!msgEl) return;
+  if (hasToken) {
+    msgEl.innerHTML = '<span style="color: #4EED8F;">✓ Token attivo: le modifiche al catalogo si sincronizzano automaticamente con Vercel.</span>';
+  } else {
+    msgEl.innerHTML = '<span>Nessun token impostato. Puoi esportare il file JSON o sincronizzare manualmente.</span>';
+  }
+}
+
+async function handleManualSyncToLive() {
+  const btn = document.getElementById('btnHeaderSync');
+  if (btn) btn.disabled = true;
+  showToast('Sincronizzazione con il sito live in corso...', 'info');
+
+  const res = await TSF_Storage.syncToGitHub();
+
+  if (btn) btn.disabled = false;
+
+  if (res.success) {
+    showToast('✓ Sincronizzazione riuscita! Vercel aggiornerà il sito pubblico in 15-20 secondi.');
+  } else {
+    alert(`Impossibile sincronizzare automaticamente: ${res.message}\n\nSuggerimento: puoi scaricare il file catalogo con il tasto "Esporta Backup Catalogo JSON" e condividerlo.`);
+  }
+}
+
 async function handleImportCatalogFile(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -592,10 +709,10 @@ async function handleImportCatalogFile(e) {
 }
 
 async function handleResetCatalog() {
-  if (confirm('Vuoi ripristinare il catalogo predefinito originale?\nTutte le modifiche attuali verranno sovrascritte con i prodotti originali.')) {
+  if (confirm('Vuoi svuotare il catalogo lasciando solo le categorie e sottocategorie pulite?')) {
     await TSF_Storage.resetToDefaults();
     refreshDashboard();
-    showToast('Catalogo originale ripristinato con successo!');
+    showToast('Catalogo resettato a categorie vuote.');
   }
 }
 
@@ -611,7 +728,7 @@ function showToast(message, type = 'success') {
 
   setTimeout(() => {
     toast.style.display = 'none';
-  }, 3500);
+  }, 4000);
 }
 
 function escapeHtml(str) {

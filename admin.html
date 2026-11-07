@@ -86,6 +86,15 @@
       </div>
 
       <div class="admin-header-right">
+        <button class="btn-primary btn-sm" onclick="handleManualSyncToLive()" id="btnHeaderSync" title="Sincronizza e pubblica le modifiche sul sito live Vercel" style="padding: 7px 12px; font-size: 0.78rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span class="hide-mobile">Pubblica Live</span>
+        </button>
+
         <a href="index.html" target="_blank" class="admin-link-btn" title="Apri il sito">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -442,46 +451,83 @@
         <!-- Video Upload & Preview Section -->
         <div class="form-video-box">
           <div class="video-box-header">
-            <label>VIDEO DEL PRODOTTO (Autoplay Loop 4K)</label>
+            <label>VIDEO DEL PRODOTTO (Autoplay Loop)</label>
             <span class="video-format-badge">MP4 / MOV / WEBM</span>
           </div>
 
-          <div class="video-upload-controls">
-            <!-- File input -->
-            <input type="file" id="videoFileInput" accept="video/mp4,video/quicktime,video/webm" style="display:none;" onchange="handleVideoFileSelected(event)">
-            <button type="button" class="btn-upload-file" onclick="document.getElementById('videoFileInput').click()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <span>Carica File Video da Dispositivo</span>
-            </button>
-            <span class="or-divider">oppure seleziona video esistente:</span>
-            
-            <select id="prodVideoSelect" class="admin-select" onchange="handleSelectExistingVideo(this.value)">
-              <option value="">-- Seleziona un video --</option>
-              <option value="assets/videos/ash-static.mp4">Static Sift Loop (assets/videos/ash-static.mp4)</option>
-              <option value="assets/videos/ash-freshfrozen.mp4">Fresh Frozen Loop (assets/videos/ash-freshfrozen.mp4)</option>
-              <option value="assets/videos/ash-drysift.mp4">Dry Sift Loop (assets/videos/ash-drysift.mp4)</option>
-              <option value="assets/videos/ash-mousse.mp4">Mousse Whipped Loop (assets/videos/ash-mousse.mp4)</option>
-              <option value="assets/videos/ash-drywork.mp4">Dry Work 98u Loop (assets/videos/ash-drywork.mp4)</option>
-              <option value="assets/videos/ash-showcase.mp4">Drops Showcase Loop (assets/videos/ash-showcase.mp4)</option>
-              <option value="assets/videos/weed-showcase.mp4">Weed Cali Tops Loop (assets/videos/weed-showcase.mp4)</option>
-              <option value="assets/videos/ice-showcase.mp4">Ice-o-Lator Melts Loop (assets/videos/ice-showcase.mp4)</option>
-              <option value="assets/videos/hero-smoke.mp4">Hero Ambient Smoke (assets/videos/hero-smoke.mp4)</option>
-            </select>
+          <div class="video-upload-controls" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Option 1: Direct URL Link Input -->
+            <div class="form-field full">
+              <label for="prodVideoPath" style="font-size: 0.78rem; color: var(--admin-gold-light); display: block; margin-bottom: 5px;">
+                1. Incolla Link / URL Video (Cloudinary, Imgur, Streamable, link web .mp4 o assets/videos/...)
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <input 
+                  type="text" 
+                  id="prodVideoPath" 
+                  class="admin-text-input" 
+                  placeholder="Es. https://.../video.mp4 oppure assets/videos/ash-static.mp4"
+                  oninput="handleVideoUrlInput(this.value)"
+                >
+                <button type="button" class="btn-glass" onclick="previewCurrentVideoUrl()" style="white-space: nowrap; padding: 0 14px; font-size: 0.78rem;">
+                  Anteprima
+                </button>
+              </div>
+            </div>
+
+            <!-- Option 2: Upload File natively from Phone / PC -->
+            <div>
+              <label style="font-size: 0.78rem; color: var(--admin-gold-light); display: block; margin-bottom: 5px;">
+                2. Oppure carica file dal dispositivo (Galleria / Camera Roll):
+              </label>
+              <label for="videoFileInput" class="btn-upload-file" style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <input type="file" id="videoFileInput" accept="video/*" style="position: absolute; opacity: 0; width: 0.1px; height: 0.1px; overflow: hidden;" onchange="handleVideoFileSelected(event)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span id="uploadBtnText">Seleziona Video dalla Galleria</span>
+              </label>
+              <div id="uploadProgressWrap" style="display: none; margin-top: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--admin-gold); margin-bottom: 4px;">
+                  <span id="uploadProgressStatus">Caricamento in corso...</span>
+                  <span id="uploadProgressPercent">0%</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 6px; height: 6px; overflow: hidden;">
+                  <div id="uploadProgressBar" style="width: 0%; height: 100%; background: var(--admin-gold); transition: width 0.2s;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Option 3: Pick from Farm Loop Library -->
+            <div>
+              <label for="prodVideoSelect" style="font-size: 0.78rem; color: var(--admin-gold-light); display: block; margin-bottom: 5px;">
+                3. Oppure usa uno dei video predefiniti della Farm:
+              </label>
+              <select id="prodVideoSelect" class="admin-select" onchange="handleSelectExistingVideo(this.value)">
+                <option value="">-- Seleziona un video loop --</option>
+                <option value="assets/videos/ash-static.mp4">Static Sift Loop (assets/videos/ash-static.mp4)</option>
+                <option value="assets/videos/ash-freshfrozen.mp4">Fresh Frozen Loop (assets/videos/ash-freshfrozen.mp4)</option>
+                <option value="assets/videos/ash-drysift.mp4">Dry Sift Loop (assets/videos/ash-drysift.mp4)</option>
+                <option value="assets/videos/ash-mousse.mp4">Mousse Whipped Loop (assets/videos/ash-mousse.mp4)</option>
+                <option value="assets/videos/ash-drywork.mp4">Dry Work 98u Loop (assets/videos/ash-drywork.mp4)</option>
+                <option value="assets/videos/ash-showcase.mp4">Drops Showcase Loop (assets/videos/ash-showcase.mp4)</option>
+                <option value="assets/videos/weed-showcase.mp4">Weed Cali Tops Loop (assets/videos/weed-showcase.mp4)</option>
+                <option value="assets/videos/ice-showcase.mp4">Ice-o-Lator Melts Loop (assets/videos/ice-showcase.mp4)</option>
+                <option value="assets/videos/hero-smoke.mp4">Hero Ambient Smoke (assets/videos/hero-smoke.mp4)</option>
+              </select>
+            </div>
           </div>
 
           <!-- Video live preview -->
-          <div class="video-preview-wrapper" id="videoPreviewWrap" style="display: none;">
+          <div class="video-preview-wrapper" id="videoPreviewWrap" style="display: none; margin-top: 14px;">
             <video id="modalPreviewVideo" autoplay muted loop playsinline></video>
             <div class="preview-overlay-info">
               <span id="previewVideoName">Video pronto</span>
-              <button type="button" class="btn-remove-preview" onclick="removeSelectedVideo()">Rimuovi</button>
+              <button type="button" class="btn-remove-preview" onclick="removeSelectedVideo()">Rimuovi Video</button>
             </div>
           </div>
-          <input type="hidden" id="prodVideoPath">
         </div>
 
         <!-- Poster Image (Optional) -->
