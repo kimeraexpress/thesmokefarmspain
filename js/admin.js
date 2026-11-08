@@ -121,6 +121,7 @@ function refreshDashboard() {
   renderMetrics();
   renderProductsList();
   renderSubcategoriesManagement();
+  updateLiveSyncStatusBanner();
 }
 
 function switchAdminTab(tabName) {
@@ -285,9 +286,10 @@ async function handleDeleteProduct(id) {
       if (res.savedToGitHub) {
         showToast(`Prodotto eliminato e sincronizzato sul sito live!`);
       } else {
-        showToast(`Prodotto eliminato.`);
+        showToast(`Prodotto eliminato localmente. Clicca "Pubblica Live" per aggiornare il sito pubblico.`);
       }
       refreshDashboard();
+      updateLiveSyncStatusBanner();
     }
   }
 }
@@ -641,10 +643,11 @@ async function handleSaveProductForm(e) {
     closeProductModal();
     refreshDashboard();
 
+    updateLiveSyncStatusBanner();
     if (res.savedToGitHub) {
       showToast(id ? 'Prodotto aggiornato e sincronizzato sul sito live!' : 'Nuovo prodotto pubblicato sul sito live!');
     } else {
-      showToast(id ? 'Prodotto modificato con successo!' : 'Nuovo prodotto aggiunto!');
+      showToast(id ? 'Prodotto salvato localmente! Clicca "Pubblica Live" per mandarlo online.' : 'Nuovo prodotto salvato localmente! Clicca "Pubblica Live" per mandarlo online.');
     }
   } catch (err) {
     alert('Errore: ' + err.message);
@@ -676,19 +679,106 @@ function updateTokenStatusMsg(hasToken) {
 }
 
 async function handleManualSyncToLive() {
+  const token = TSF_Storage.getGitHubToken();
+  if (!token) {
+    openLiveSyncModal();
+    return;
+  }
+
   const btn = document.getElementById('btnHeaderSync');
-  if (btn) btn.disabled = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="font-size: 0.78rem;">Pubblicando...</span>`;
+  }
   showToast('Sincronizzazione con il sito live in corso...', 'info');
 
   const res = await TSF_Storage.syncToGitHub();
 
-  if (btn) btn.disabled = false;
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+      <span class="hide-mobile">Pubblica Live</span>
+    `;
+  }
 
   if (res.success) {
-    showToast('✓ Sincronizzazione riuscita! Vercel aggiornerà il sito pubblico in 15-20 secondi.');
+    updateLiveSyncStatusBanner();
+    showToast('Sincronizzazione riuscita! Vercel sta aggiornando il sito pubblico in 10-15s.');
+  } else if (res.needToken) {
+    openLiveSyncModal();
   } else {
-    alert(`Impossibile sincronizzare automaticamente: ${res.message}\n\nSuggerimento: puoi scaricare il file catalogo con il tasto "Esporta Backup Catalogo JSON" e condividerlo.`);
+    alert(`Impossibile sincronizzare automaticamente: ${res.message}\n\nVerifica che il token sia corretto e con permessi repo.`);
   }
+}
+
+function updateLiveSyncStatusBanner() {
+  const banner = document.getElementById('liveSyncStatusBanner');
+  if (!banner) return;
+  const hasToken = TSF_Storage.hasLiveSync();
+  const products = TSF_Storage.getProducts();
+
+  banner.style.display = 'flex';
+  if (hasToken) {
+    banner.className = 'sync-status-banner synced';
+    banner.innerHTML = `
+      <div class="banner-text">
+        <span style="font-size: 1.15rem;">🟢</span>
+        <div>
+          <strong>Connessione Live Attiva:</strong> Tutte le modifiche possono essere sincronizzate direttamente su Vercel per tutti i visitatori.
+        </div>
+      </div>
+      <button type="button" class="banner-btn" onclick="handleManualSyncToLive()">
+        <span>Pubblica Live Ora</span>
+      </button>
+    `;
+  } else {
+    banner.className = 'sync-status-banner local-only';
+    banner.innerHTML = `
+      <div class="banner-text">
+        <span style="font-size: 1.15rem;">🟡</span>
+        <div>
+          <strong>Modalità Locale (${products.length} ${products.length === 1 ? 'prodotto' : 'prodotti'}):</strong> I prodotti sono memorizzati su questo dispositivo. Per renderli visibili online sul link pubblico a tutti i clienti, collega la chiave di pubblicazione.
+        </div>
+      </div>
+      <button type="button" class="banner-btn" onclick="openLiveSyncModal()">
+        <span>Collega e Pubblica Live</span>
+      </button>
+    `;
+  }
+}
+
+function openLiveSyncModal() {
+  const modal = document.getElementById('liveSyncModal');
+  const input = document.getElementById('modalGhTokenInput');
+  if (input) input.value = TSF_Storage.getGitHubToken() || '';
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeLiveSyncModal() {
+  const modal = document.getElementById('liveSyncModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleSaveAndSyncLiveModal() {
+  const input = document.getElementById('modalGhTokenInput');
+  const token = (input.value || '').trim();
+  if (!token) {
+    alert('Inserisci il Token GitHub per procedere alla sincronizzazione');
+    return;
+  }
+  TSF_Storage.setGitHubToken(token);
+  const ghInput = document.getElementById('ghTokenInput');
+  if (ghInput) ghInput.value = token;
+  updateTokenStatusMsg(true);
+  updateLiveSyncStatusBanner();
+  closeLiveSyncModal();
+  showToast('Token salvato con successo! Pubblicazione in corso...', 'info');
+  await handleManualSyncToLive();
 }
 
 async function handleImportCatalogFile(e) {

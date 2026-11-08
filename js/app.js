@@ -177,6 +177,25 @@ let currentLang = localStorage.getItem('tsf_lang') || 'es';
 // Comprehensive Product Catalog Database
 const PRODUCTS_DATA = [];
 
+// App State
+const state = {
+  activeCategory: 'ASH', // 'ASH', 'WEED', 'ICE'
+  activeSubcategory: 'ALL', // 'ALL' or specific subcategory name
+  searchQuery: '',
+  isMuted: true,
+  cart: [],
+  selectedModalProduct: null,
+  selectedQtyIndex: 0
+};
+
+// Helper: Get live products from central storage or fallback
+function getCatalogProducts() {
+  if (window.TSF_Storage) {
+    return TSF_Storage.getProducts();
+  }
+  return PRODUCTS_DATA;
+}
+
 // DOM Elements
 const elements = {
   productsGrid: document.getElementById('productsGrid'),
@@ -707,7 +726,8 @@ function closeProductModal() {
 
 // Direct Order Link Trigger
 window.handleOrderClick = function(productId) {
-  const product = productId ? PRODUCTS_DATA.find(p => p.id === productId) : state.selectedModalProduct;
+  const allProducts = getCatalogProducts();
+  const product = productId ? allProducts.find(p => p.id === productId) : state.selectedModalProduct;
   const link = window.TSF_ORDER_LINK;
   if (!link || link === '#'|| link.trim() === '') {
     const productName = product ? product.title : 'questo prodotto';

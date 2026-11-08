@@ -1236,3 +1236,57 @@ body.admin-body {
     display: inline;
   }
 }
+
+/* Live Sync Status Banner */
+.sync-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  transition: all 0.25s ease;
+}
+
+.sync-status-banner.synced {
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #a3e9c0;
+}
+
+.sync-status-banner.local-only {
+  background: rgba(229, 169, 60, 0.08);
+  border: 1px solid rgba(229, 169, 60, 0.3);
+  color: #f7d288;
+}
+
+.sync-status-banner .banner-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.sync-status-banner .banner-btn {
+  background: var(--admin-gold);
+  color: #000;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.sync-status-banner .banner-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+}

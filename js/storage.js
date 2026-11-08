@@ -121,41 +121,66 @@ const TSF_Storage = {
   _catalog: null,
   _isSyncing: false,
 
-  // Initialize storage: ALWAYS fetches the live server catalog first
+  // Initialize storage: Smart reconciliation with server and local preservation
   async init() {
-    // 1. Fetch live catalog from server (with cache buster)
-    try {
-      const res = await fetch('data/catalog.json?_t=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.categories) {
-          this._catalog = data;
-          this._normalizeCatalog();
-          this.saveLocally(this._catalog);
-          return this._catalog;
-        }
-      }
-    } catch (e) {
-      console.warn('[TSF] Fetch live catalog offline/fallito, uso cache locale:', e);
-    }
-
-    // 2. Fallback to LocalStorage
+    // 1. Check local catalog first
+    let localData = null;
     const local = localStorage.getItem(TSF_CONFIG.STORAGE_KEY_CATALOG);
     if (local) {
       try {
-        this._catalog = JSON.parse(local);
-        this._normalizeCatalog();
-        return this._catalog;
-      } catch (e) {
-        console.error('Errore parsing catalog da localStorage', e);
-      }
+        localData = JSON.parse(local);
+      } catch (_) {}
     }
 
-    // 3. Fallback to clean empty default
-    this._catalog = {
-      categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
-      products: []
-    };
+    // 2. Fetch live catalog from server (with cache buster)
+    let serverData = null;
+    try {
+      const res = await fetch('data/catalog.json?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        serverData = await res.json();
+      }
+    } catch (e) {
+      console.warn('[TSF] Fetch live catalog offline/fallito:', e);
+    }
+
+    // 3. Smart reconciliation:
+    // If local catalog has products and server has 0, NEVER overwrite local!
+    if (localData && Array.isArray(localData.products) && localData.products.length > 0) {
+      if (!serverData || !Array.isArray(serverData.products) || serverData.products.length === 0) {
+        this._catalog = localData;
+        this._normalizeCatalog();
+        return this._catalog;
+      }
+      const localTime = localData.updatedAt || 0;
+      const serverTime = serverData.updatedAt || 0;
+      if (localTime >= serverTime) {
+        this._catalog = localData;
+      } else {
+        this._catalog = serverData;
+        this.saveLocally(this._catalog);
+      }
+      this._normalizeCatalog();
+      return this._catalog;
+    }
+
+    // If server has data (and local had no products), use server
+    if (serverData && serverData.categories) {
+      this._catalog = serverData;
+      this._normalizeCatalog();
+      this.saveLocally(this._catalog);
+      return this._catalog;
+    }
+
+    // Fallback to local or default
+    if (localData && localData.categories) {
+      this._catalog = localData;
+    } else {
+      this._catalog = {
+        updatedAt: Date.now(),
+        categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+        products: []
+      };
+    }
     this._normalizeCatalog();
     this.saveLocally(this._catalog);
     return this._catalog;
@@ -206,24 +231,37 @@ const TSF_Storage = {
     window.dispatchEvent(new CustomEvent('tsf:catalog-updated', { detail: catalog }));
   },
 
-  // Save to LocalStorage + Sync to GitHub + Sync to local server
+  // Save to LocalStorage + Sync to GitHub (via Vercel API or direct token)
   async persistCatalog(catalog) {
+    catalog.updatedAt = Date.now();
     this.saveLocally(catalog);
 
     let ghResult = { success: false, skipped: true };
     const token = this.getGitHubToken();
-    if (token) {
+
+    // 1. Call Vercel Serverless Function /api/save-catalog
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const apiRes = await fetch('/api/save-catalog', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(catalog)
+      });
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json.syncedToGitHub) {
+          ghResult = { success: true, message: 'Pubblicato live su Vercel!' };
+        } else if (json.githubError) {
+          ghResult = { success: false, message: json.githubError };
+        }
+      }
+    } catch (_) {}
+
+    // 2. Direct GitHub API commit fallback (if client has token and /api/save-catalog didn't succeed)
+    if (!ghResult.success && token) {
       ghResult = await this.syncToGitHub(catalog);
     }
-
-    // Background sync to local server.py if running
-    try {
-      fetch('/api/save-catalog', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(catalog)
-      }).catch(() => {});
-    } catch (_) {}
 
     return {
       success: true,
@@ -250,25 +288,47 @@ const TSF_Storage = {
 
   async syncToGitHub(catalog = null) {
     const cat = catalog || this.getCatalog();
+    cat.updatedAt = Date.now();
     const token = this.getGitHubToken();
-    if (!token) {
-      return { success: false, message: 'Nessun token GitHub configurato' };
-    }
 
     if (this._isSyncing) return { success: false, message: 'Sincronizzazione già in corso' };
     this._isSyncing = true;
 
     try {
+      // 1. First attempt: call /api/save-catalog (uses Vercel env or Bearer)
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const apiRes = await fetch('/api/save-catalog', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(cat)
+        });
+        if (apiRes.ok) {
+          const json = await apiRes.json();
+          if (json.syncedToGitHub) {
+            return { success: true, message: 'Sincronizzato con GitHub e Vercel!' };
+          }
+          if (json.githubError) {
+            return { success: false, message: json.githubError };
+          }
+        }
+      } catch (_) {}
+
+      // 2. Fallback direct to GitHub API
+      if (!token) {
+        return { success: false, needToken: true, message: 'Nessun token di pubblicazione configurato' };
+      }
+
       const repo = TSF_CONFIG.GITHUB_REPO;
       const path = 'data/catalog.json';
-      const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+      const url = 'https://api.github.com/repos/' + repo + '/contents/' + path;
       const headers = {
-        'Authorization': `token ${token}`,
+        'Authorization': 'token ' + token,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       };
 
-      // 1. Get current file sha
       let sha = null;
       try {
         const getRes = await fetch(url, { headers });
@@ -278,12 +338,11 @@ const TSF_Storage = {
         }
       } catch (_) {}
 
-      // 2. Base64 UTF-8 encode JSON
       const jsonStr = JSON.stringify(cat, null, 2);
       const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
 
       const body = {
-        message: `chore(catalog): update via admin panel [${new Date().toISOString().slice(0, 16)}]`,
+        message: 'chore(catalog): update via admin panel [' + new Date().toISOString().slice(0, 16) + ']',
         content: b64,
         branch: 'main'
       };
@@ -306,6 +365,10 @@ const TSF_Storage = {
     } finally {
       this._isSyncing = false;
     }
+  },
+
+  hasLiveSync() {
+    return Boolean(this.getGitHubToken());
   },
 
   // =====================================================================
