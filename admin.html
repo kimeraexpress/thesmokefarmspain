@@ -479,7 +479,7 @@
             <!-- Option 2: Upload File natively from Phone / PC -->
             <div>
               <label style="font-size: 0.78rem; color: var(--admin-gold-light); display: block; margin-bottom: 5px;">
-                2. Oppure carica file dal dispositivo (Galleria / Camera Roll):
+                2. Oppure carica file dal dispositivo (Galleria / Camera Roll — ottimizzazione automatica fino a ~15s):
               </label>
               <label for="videoFileInput" class="btn-upload-file" style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <input type="file" id="videoFileInput" accept="video/*" style="position: absolute; opacity: 0; width: 0.1px; height: 0.1px; overflow: hidden;" onchange="handleVideoFileSelected(event)">
@@ -523,7 +523,7 @@
 
           <!-- Video live preview -->
           <div class="video-preview-wrapper" id="videoPreviewWrap" style="display: none; margin-top: 14px;">
-            <video id="modalPreviewVideo" autoplay muted loop playsinline></video>
+            <video id="modalPreviewVideo" controls autoplay muted loop playsinline webkit-playsinline></video>
             <div class="preview-overlay-info">
               <span id="previewVideoName">Video pronto</span>
               <button type="button" class="btn-remove-preview" onclick="removeSelectedVideo()">Rimuovi Video</button>

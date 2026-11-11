@@ -12,8 +12,8 @@ let currentEditingProductId = null;
 //  INITIALIZATION & AUTHENTICATION
 // =======================================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Initialize storage
-  await TSF_Storage.init();
+  // Initialize storage and check server sync status
+  await Promise.all([TSF_Storage.init(), TSF_Storage.checkServerSync()]);
 
   // Check login state
   if (TSF_Storage.isAdminLoggedIn()) {
@@ -221,6 +221,7 @@ async function renderProductsList() {
     card.className = 'admin-prod-card';
 
     const formatsStr = (product.options || []).map(o => o.qty).join(' • ') || 'Nessun formato';
+    const isLocalOnlyVideo = Boolean(product.video && product.video.startsWith('idb:'));
     const resolvedVideoUrl = await TSF_Storage.resolveMediaUrl(product.video);
 
     card.innerHTML = `
@@ -243,6 +244,8 @@ async function renderProductsList() {
       <div class="admin-prod-body">
         <h4 class="admin-prod-title">${escapeHtml(product.title)}</h4>
         <div class="admin-prod-lineage">${escapeHtml(product.lineage || 'Genetica Reserve')}</div>
+
+        ${isLocalOnlyVideo ? `<div style="margin: 8px 0; padding: 7px 10px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); border-radius: 8px; font-size: 0.74rem; color: #FCD34D; line-height: 1.35;">⚠️ Video salvato solo su quel dispositivo: premi <strong>Modifica</strong> e ricarica il video per pubblicarlo online per tutti.</div>` : ''}
 
         <div class="admin-prod-tags">
           ${product.potency ? `<span class="admin-tag-pill">${escapeHtml(product.potency)}</span>` : ''}
@@ -271,6 +274,29 @@ async function renderProductsList() {
         </div>
       </div>
     `;
+
+    const adminVid = card.querySelector('.admin-prod-video');
+    if (adminVid) {
+      adminVid.addEventListener('loadedmetadata', () => {
+        const vw = adminVid.videoWidth;
+        const vh = adminVid.videoHeight;
+        const box = adminVid.closest('.admin-prod-media-box');
+        if (vw && vh && box) {
+          box.style.aspectRatio = vw >= vh ? `${vw} / ${vh}` : `${Math.max(vw / vh, 9 / 16)}`;
+        }
+      });
+      if (product.video && product.video.startsWith('assets/videos/')) {
+        let triedRaw = false;
+        adminVid.onerror = () => {
+          if (!triedRaw) {
+            triedRaw = true;
+            adminVid.src = 'https://raw.githubusercontent.com/kimeraexpress/thesmokefarmspain/main/' + product.video;
+            adminVid.load();
+            adminVid.play().catch(() => {});
+          }
+        };
+      }
+    }
 
     container.appendChild(card);
   }
@@ -433,7 +459,9 @@ async function openProductModal(productId = null) {
     if (p.video) {
       document.getElementById('prodVideoPath').value = p.video;
       const resolvedUrl = await TSF_Storage.resolveMediaUrl(p.video);
-      showVideoPreview(resolvedUrl, p.video.split('/').pop());
+      if (resolvedUrl) {
+        showVideoPreview(resolvedUrl, p.video.split('/').pop());
+      }
     }
   } else {
     modalTitle.textContent = 'Nuovo Prodotto';
@@ -528,9 +556,17 @@ async function handleVideoFileSelected(e) {
   const progStatus = document.getElementById('uploadProgressStatus');
   const progPct = document.getElementById('uploadProgressPercent');
   const btnLabel = document.getElementById('uploadBtnText');
+  const saveBtn = document.getElementById('btnSaveProductSubmit');
 
   if (progWrap) progWrap.style.display = 'block';
+  if (progBar) progBar.style.width = '5%';
+  if (progPct) progPct.textContent = '5%';
+  if (progStatus) progStatus.textContent = 'Preparazione video...';
   if (btnLabel) btnLabel.textContent = file.name;
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Caricamento video...';
+  }
 
   try {
     const result = await TSF_Storage.uploadMediaFile(file, (pct, status) => {
@@ -543,13 +579,20 @@ async function handleVideoFileSelected(e) {
     showVideoPreview(result.previewUrl, result.filename);
 
     if (result.isOnline) {
-      showToast('Video caricato e pronto per la pubblicazione online!');
+      showToast('Video caricato online su CDN! Ora premi Salva Prodotto.');
     } else {
       showToast('Video salvato in anteprima locale.');
     }
   } catch (err) {
-    alert('Errore caricamento video: ' + err.message);
+    alert(err.message);
     if (progWrap) progWrap.style.display = 'none';
+    if (btnLabel) btnLabel.textContent = 'Seleziona Video dalla Galleria';
+    e.target.value = '';
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Salva Prodotto';
+    }
   }
 }
 
@@ -565,10 +608,23 @@ function showVideoPreview(url, label) {
   const vid = document.getElementById('modalPreviewVideo');
   const nameSpan = document.getElementById('previewVideoName');
 
+  vid.onerror = null;
+  if (url && url.startsWith('assets/videos/')) {
+    let triedRaw = false;
+    vid.onerror = () => {
+      if (!triedRaw) {
+        triedRaw = true;
+        vid.src = 'https://raw.githubusercontent.com/kimeraexpress/thesmokefarmspain/main/' + url;
+        vid.load();
+        vid.play().catch(() => {});
+      }
+    };
+  }
+
   vid.src = url;
   vid.play().catch(() => {});
   nameSpan.textContent = label || 'Video selezionato';
-  wrap.style.display = 'block';
+  wrap.style.display = 'flex';
 }
 
 function removeSelectedVideo() {
@@ -679,8 +735,7 @@ function updateTokenStatusMsg(hasToken) {
 }
 
 async function handleManualSyncToLive() {
-  const token = TSF_Storage.getGitHubToken();
-  if (!token) {
+  if (!TSF_Storage.hasLiveSync()) {
     openLiveSyncModal();
     return;
   }

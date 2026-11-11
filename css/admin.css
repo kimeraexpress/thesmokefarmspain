@@ -502,15 +502,20 @@ body.admin-body {
 .admin-prod-media-box {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #000;
+  aspect-ratio: 4 / 5;
+  max-height: 380px;
+  background: radial-gradient(circle at center, #1b0e20 0%, #07040a 100%);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .admin-prod-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
 }
 
 .admin-prod-badge-strip {
@@ -1122,28 +1127,30 @@ body.admin-body {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  max-height: 220px;
-  background: #000;
-  border: 1px solid rgba(229, 169, 60, 0.3);
+  background: #07040a;
+  border: 1px solid rgba(229, 169, 60, 0.35);
+  display: flex;
+  flex-direction: column;
 }
 
 .video-preview-wrapper video {
   width: 100%;
-  height: 220px;
+  height: auto;
+  max-height: 380px;
   object-fit: contain;
+  display: block;
+  background: #07040a;
 }
 
 .preview-overlay-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85));
-  padding: 8px 12px;
+  background: rgba(18, 10, 22, 0.95);
+  border-top: 1px solid rgba(229, 169, 60, 0.2);
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.75rem;
+  gap: 10px;
+  font-size: 0.78rem;
 }
 
 .btn-remove-preview {

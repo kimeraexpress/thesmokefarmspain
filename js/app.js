@@ -472,6 +472,50 @@ function setMainCategory(cat) {
   renderProducts();
 }
 
+// Adaptive aspect-ratio & instant CDN fallback for any video orientation (9:16, 4:5, 1:1, 16:9)
+function attachAdaptiveVideoSizing(videoEl) {
+  if (!videoEl || videoEl.dataset.adaptiveBound) return;
+  videoEl.dataset.adaptiveBound = '1';
+
+  const applyFit = () => {
+    const vw = videoEl.videoWidth;
+    const vh = videoEl.videoHeight;
+    const box = videoEl.closest('.card-media-box, .admin-prod-media-box');
+    if (!vw || !vh || !box) return;
+
+    const ratio = vw / vh;
+    if (ratio >= 1.15) {
+      box.style.aspectRatio = `${vw} / ${vh}`;
+      box.style.maxHeight = 'none';
+    } else {
+      const clampedRatio = Math.max(ratio, 9 / 16);
+      box.style.aspectRatio = `${clampedRatio}`;
+      box.style.maxHeight = '540px';
+    }
+  };
+
+  videoEl.addEventListener('loadedmetadata', applyFit);
+  if (videoEl.readyState >= 1) applyFit();
+}
+
+function attachVideoFallbacks(videoEl, rawPath) {
+  if (!videoEl) return;
+  attachAdaptiveVideoSizing(videoEl);
+  if (!rawPath) return;
+
+  if (rawPath.startsWith('assets/videos/')) {
+    let triedRawFallback = false;
+    videoEl.onerror = () => {
+      if (!triedRawFallback) {
+        triedRawFallback = true;
+        videoEl.src = 'https://raw.githubusercontent.com/kimeraexpress/thesmokefarmspain/main/' + rawPath;
+        videoEl.load();
+        videoEl.play().catch(() => {});
+      }
+    };
+  }
+}
+
 // Filter and Render Products
 function renderProducts() {
   const t = I18N[currentLang];
@@ -608,10 +652,12 @@ function renderProducts() {
       </div>
     `;
 
-    // Asynchronously resolve IndexedDB video if uploaded through browser
+    const vEl = card.querySelector('.card-media-video');
+    attachVideoFallbacks(vEl, product.video);
+
+    // Asynchronously resolve IndexedDB video if stored locally
     if (window.TSF_Storage && product.video && product.video.startsWith('idb:')) {
       TSF_Storage.resolveMediaUrl(product.video).then(blobUrl => {
-        const vEl = card.querySelector('.card-media-video');
         if (vEl && blobUrl) {
           vEl.src = blobUrl;
           vEl.play().catch(() => {});
@@ -681,16 +727,21 @@ window.openProductModal = function(id) {
   elements.modalAromas.innerHTML = (product.aromas || []).map(a => `<span class="meta-pill">${a}</span>`).join('');
 
   // Video in Modal
+  elements.modalVideo.onerror = null;
   elements.modalVideo.poster = product.image || 'assets/logo-badge.png';
   elements.modalVideo.muted = state.isMuted;
 
   if (window.TSF_Storage && product.video && product.video.startsWith('idb:')) {
+    elements.modalVideo.src = '';
     TSF_Storage.resolveMediaUrl(product.video).then(url => {
-      elements.modalVideo.src = url;
-      elements.modalVideo.play().catch(() => {});
+      if (url) {
+        elements.modalVideo.src = url;
+        elements.modalVideo.play().catch(() => {});
+      }
     });
   } else {
-    elements.modalVideo.src = product.video;
+    elements.modalVideo.src = product.video || '';
+    attachVideoFallbacks(elements.modalVideo, product.video);
     elements.modalVideo.play().catch(() => {});
   }
 

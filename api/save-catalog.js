@@ -11,6 +11,11 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  if (req.method === 'GET') {
+    const hasServerToken = Boolean(process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
+    return res.status(200).json({ status: 'ok', serverSyncEnabled: hasServerToken });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }

@@ -120,6 +120,19 @@ const TSF_Storage = {
   
   _catalog: null,
   _isSyncing: false,
+  _serverSyncEnabled: false,
+
+  async checkServerSync() {
+    try {
+      const res = await fetch('/api/save-catalog?_t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        this._serverSyncEnabled = Boolean(json && json.serverSyncEnabled);
+        return this._serverSyncEnabled;
+      }
+    } catch (_) {}
+    return false;
+  },
 
   // Initialize storage: Smart reconciliation with server and local preservation
   async init() {
@@ -368,7 +381,7 @@ const TSF_Storage = {
   },
 
   hasLiveSync() {
-    return Boolean(this.getGitHubToken());
+    return Boolean(this.getGitHubToken() || this._serverSyncEnabled);
   },
 
   // =====================================================================
@@ -500,22 +513,199 @@ const TSF_Storage = {
   },
 
   // =====================================================================
-  //  MEDIA / VIDEO UPLOAD (GitHub API + Cloudinary + Local Server + IDB)
+  //  MEDIA / VIDEO UPLOAD (Browser Optimize + Vercel API + GitHub + IDB)
   // =====================================================================
+  async _compressVideoInBrowser(file, onProgress) {
+    if (typeof MediaRecorder === 'undefined') {
+      throw new Error('MediaRecorder non supportato su questo browser');
+    }
+
+    const candidates = [
+      'video/mp4;codecs=avc1.42E01E',
+      'video/mp4',
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm'
+    ];
+    const mimeType = candidates.find(t => {
+      try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; }
+    });
+    if (!mimeType) {
+      throw new Error('Nessun codec video supportato per compressione');
+    }
+
+    const srcUrl = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.preload = 'auto';
+    video.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;';
+    document.body.appendChild(video);
+
+    try {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Timeout caricamento video')), 12000);
+        video.onloadedmetadata = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+        video.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error('Formato video non decodificabile'));
+        };
+        video.src = srcUrl;
+        video.load();
+      });
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) {
+        throw new Error('Dimensioni video non rilevabili');
+      }
+
+      const rawDuration = (video.duration && isFinite(video.duration)) ? video.duration : 12;
+      const maxClipSeconds = Math.min(rawDuration, 14);
+
+      // Preserve exact portrait/landscape orientation, cap longest side to 720px, even dimensions
+      const scale = Math.min(1, 720 / Math.max(vw, vh));
+      const targetW = Math.max(2, Math.round((vw * scale) / 2) * 2);
+      const targetH = Math.max(2, Math.round((vh * scale) / 2) * 2);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+
+      if (typeof canvas.captureStream !== 'function') {
+        throw new Error('Canvas captureStream non supportato');
+      }
+
+      // Ensure first decoded frame is ready
+      if (video.readyState < 2) {
+        await new Promise(r => {
+          const t = setTimeout(r, 1500);
+          video.onloadeddata = () => { clearTimeout(t); r(); };
+        });
+      }
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+
+      const targetBitrate = Math.max(450000, Math.min(2000000, Math.floor((2.9 * 8 * 1024 * 1024) / Math.max(maxClipSeconds, 2))));
+      const stream = canvas.captureStream(24);
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: targetBitrate });
+      } catch (_) {
+        recorder = new MediaRecorder(stream, { videoBitsPerSecond: targetBitrate });
+      }
+
+      const chunks = [];
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+
+      const recordingDone = new Promise((resolve, reject) => {
+        recorder.onstop = () => resolve();
+        recorder.onerror = (err) => reject(err && err.error ? err.error : new Error('Errore compressione video'));
+      });
+
+      let rafId = null;
+      let stopped = false;
+
+      const stopRecording = () => {
+        if (stopped) return;
+        stopped = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        try { video.pause(); } catch (_) {}
+        if (recorder.state !== 'inactive') {
+          try { recorder.stop(); } catch (_) {}
+        }
+      };
+
+      const safetyTimeout = setTimeout(stopRecording, (maxClipSeconds + 6) * 1000);
+
+      const renderFrame = () => {
+        if (stopped) return;
+        ctx.drawImage(video, 0, 0, targetW, targetH);
+        if (onProgress && maxClipSeconds > 0) {
+          const ratio = Math.min(1, video.currentTime / maxClipSeconds);
+          const pct = Math.round(12 + ratio * 58);
+          onProgress(pct, `Ottimizzazione video (${Math.round(ratio * 100)}%)...`);
+        }
+        if (video.ended || video.currentTime >= maxClipSeconds) {
+          clearTimeout(safetyTimeout);
+          stopRecording();
+          return;
+        }
+        rafId = requestAnimationFrame(renderFrame);
+      };
+
+      video.onended = () => {
+        clearTimeout(safetyTimeout);
+        stopRecording();
+      };
+
+      recorder.start(250);
+      await video.play();
+      rafId = requestAnimationFrame(renderFrame);
+
+      await recordingDone;
+
+      const outExt = mimeType.includes('mp4') ? '.mp4' : '.webm';
+      const baseNoExt = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_') || 'video';
+      const outBlob = new Blob(chunks, { type: mimeType.split(';')[0] });
+      if (outBlob.size < 10000) {
+        throw new Error('Video compresso vuoto');
+      }
+      return new File([outBlob], baseNoExt + outExt, { type: outBlob.type });
+    } finally {
+      try { video.pause(); } catch (_) {}
+      if (video.parentNode) video.parentNode.removeChild(video);
+      URL.revokeObjectURL(srcUrl);
+    }
+  },
+
   async uploadMediaFile(file, onProgress) {
     if (!file) throw new Error('Nessun file selezionato');
 
-    const cleanName = file.name.replace(/[^a-zA-Z0-9_\.-]/g, '_');
-    const fileSizeMB = file.size / (1024 * 1024);
-
-    if (onProgress) onProgress(15, 'Preparazione file...');
-
-    // 1. Try GitHub direct upload if token is present and file <= 25MB
+    let workingFile = file;
+    let cleanName = file.name.replace(/[^a-zA-Z0-9_\.-]/g, '_');
+    const rawSizeMB = file.size / (1024 * 1024);
+    const isMov = /\.mov$/i.test(cleanName);
     const token = this.getGitHubToken();
-    if (token && fileSizeMB <= 25) {
+
+    if (onProgress) onProgress(8, 'Analisi video in corso...');
+
+    // If no direct GitHub token on client, Vercel upload has ~4.2MB limit.
+    // Auto-optimize/compress videos > 3.8MB OR convert .mov to universal MP4 when possible!
+    const needsCompression = (!token && rawSizeMB > 3.8) || (isMov && rawSizeMB <= 20 && rawSizeMB > 1.5);
+    if (needsCompression) {
       try {
-        if (onProgress) onProgress(30, 'Caricamento su server GitHub & Vercel CDN...');
-        const arrayBuf = await file.arrayBuffer();
+        if (onProgress) onProgress(12, 'Ottimizzazione video HD per mobile & web...');
+        const compressed = await this._compressVideoInBrowser(file, onProgress);
+        if (compressed && compressed.size > 10000) {
+          // Keep compressed if original was over limit OR compressed is valid MP4/WebM smaller than 4.1MB
+          if (rawSizeMB > 3.8 || compressed.size <= 4.1 * 1024 * 1024) {
+            workingFile = compressed;
+            cleanName = workingFile.name;
+          }
+        }
+      } catch (compErr) {
+        console.warn('[TSF] Compressione video saltata/fallita:', compErr);
+        // Continue with original if it fits; otherwise upload check below will reject cleanly
+      }
+    }
+
+    const finalSizeMB = workingFile.size / (1024 * 1024);
+    const localPreviewUrl = URL.createObjectURL(workingFile);
+
+    // 1. Direct GitHub API upload if token is configured locally (up to 25MB)
+    if (token && finalSizeMB <= 25) {
+      try {
+        if (onProgress) onProgress(75, 'Caricamento diretto su CDN...');
+        const arrayBuf = await workingFile.arrayBuffer();
         let binary = '';
         const bytes = new Uint8Array(arrayBuf);
         const len = bytes.byteLength;
@@ -524,7 +714,8 @@ const TSF_Storage = {
         }
         const b64 = btoa(binary);
 
-        const videoPath = `assets/videos/${cleanName}`;
+        const stampedName = `${Date.now()}_${cleanName}`;
+        const videoPath = `assets/videos/${stampedName}`;
         const url = `https://api.github.com/repos/${TSF_CONFIG.GITHUB_REPO}/contents/${videoPath}`;
         const headers = {
           'Authorization': `token ${token}`,
@@ -532,21 +723,11 @@ const TSF_Storage = {
           'Content-Type': 'application/json'
         };
 
-        let sha = null;
-        try {
-          const getRes = await fetch(url, { headers });
-          if (getRes.ok) {
-            const getJson = await getRes.json();
-            sha = getJson.sha;
-          }
-        } catch (_) {}
-
         const putBody = {
-          message: `upload(video): ${cleanName} via admin panel`,
+          message: `upload(video): ${stampedName} via admin panel`,
           content: b64,
           branch: 'main'
         };
-        if (sha) putBody.sha = sha;
 
         const res = await fetch(url, {
           method: 'PUT',
@@ -555,33 +736,73 @@ const TSF_Storage = {
         });
 
         if (res.ok) {
-          if (onProgress) onProgress(100, 'Video salvato su CDN!');
+          blobUrlCache.set(videoPath, localPreviewUrl);
+          if (onProgress) onProgress(100, 'Video pubblicato su CDN!');
           return {
             path: videoPath,
-            filename: cleanName,
+            rawUrl: `https://raw.githubusercontent.com/${TSF_CONFIG.GITHUB_REPO}/main/${videoPath}`,
+            filename: stampedName,
             isOnline: true,
-            previewUrl: URL.createObjectURL(file)
+            previewUrl: localPreviewUrl
           };
         }
       } catch (e) {
-        console.warn('[TSF] Upload GitHub fallito, provo fallback:', e);
+        console.warn('[TSF] Upload GitHub diretto fallito, provo API server:', e);
       }
     }
 
-    // 2. Try local server.py upload if running
-    try {
-      const formData = new FormData();
-      formData.append('file', file, cleanName);
+    // 2. Upload via Vercel Serverless Function /api/upload-video (raw binary, up to 4.3MB)
+    const isLocalHost =
+      typeof window !== 'undefined' &&
+      (window.location.protocol === 'file:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1');
 
-      const res = await fetch('/api/upload-video', {
+    if (!isLocalHost) {
+      if (finalSizeMB > 4.25) {
+        URL.revokeObjectURL(localPreviewUrl);
+        throw new Error(
+          `Il video pesa ${finalSizeMB.toFixed(1)} MB (limite massimo server: 4.2 MB).\n\nConsiglio: taglia la clip a 5–12 secondi dal telefono oppure caricala su Streamable / Cloudinary e incolla il link nel campo sopra.`
+        );
+      }
+
+      if (onProgress) onProgress(78, 'Pubblicazione online su Vercel CDN...');
+      const uploadRes = await fetch(`/api/upload-video?filename=${encodeURIComponent(cleanName)}`, {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Filename': encodeURIComponent(cleanName)
+        },
+        body: workingFile
       });
 
+      const uploadJson = await uploadRes.json().catch(() => ({}));
+      if (uploadRes.ok && uploadJson.path) {
+        blobUrlCache.set(uploadJson.path, localPreviewUrl);
+        if (onProgress) onProgress(100, 'Video pubblicato online!');
+        return {
+          path: uploadJson.path,
+          rawUrl: uploadJson.rawUrl || '',
+          filename: uploadJson.filename || cleanName,
+          isOnline: true,
+          previewUrl: localPreviewUrl
+        };
+      }
+
+      URL.revokeObjectURL(localPreviewUrl);
+      throw new Error(uploadJson.error || `Errore server durante il caricamento (${uploadRes.status})`);
+    }
+
+    // 3. Local dev server.py fallback (localhost only)
+    try {
+      const formData = new FormData();
+      formData.append('file', workingFile, cleanName);
+      const res = await fetch('/api/upload-video', { method: 'POST', body: formData });
       if (res.ok) {
         const json = await res.json();
         if (json.path) {
-          if (onProgress) onProgress(100, 'Caricato su server!');
+          blobUrlCache.set(json.path, localPreviewUrl);
+          if (onProgress) onProgress(100, 'Caricato su server locale!');
           return {
             path: json.path,
             filename: json.filename,
@@ -592,27 +813,26 @@ const TSF_Storage = {
       }
     } catch (_) {}
 
-    // 3. Fallback to IndexedDB (Works in local browser)
-    try {
-      const mediaId = `media_${Date.now()}_${cleanName}`;
-      await mediaDB.saveMedia(mediaId, file);
-      const objectUrl = URL.createObjectURL(file);
-      blobUrlCache.set(mediaId, objectUrl);
+    // 4. Local offline IndexedDB fallback (only when running locally offline)
+    const mediaId = `media_${Date.now()}_${cleanName}`;
+    await mediaDB.saveMedia(mediaId, workingFile);
+    blobUrlCache.set(mediaId, localPreviewUrl);
 
-      if (onProgress) onProgress(100, 'Video salvato in anteprima locale!');
-      return {
-        path: `idb:${mediaId}`,
-        filename: cleanName,
-        isOnline: false,
-        previewUrl: objectUrl
-      };
-    } catch (e) {
-      throw new Error('Impossibile salvare il video in memoria: ' + e.message);
-    }
+    if (onProgress) onProgress(100, 'Video salvato in locale!');
+    return {
+      path: `idb:${mediaId}`,
+      filename: cleanName,
+      isOnline: false,
+      previewUrl: localPreviewUrl
+    };
   },
 
   async resolveMediaUrl(path) {
     if (!path) return '';
+
+    if (blobUrlCache.has(path)) {
+      return blobUrlCache.get(path);
+    }
 
     if (path.startsWith('idb:')) {
       const mediaId = path.replace('idb:', '');
