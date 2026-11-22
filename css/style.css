@@ -1474,3 +1474,179 @@ h1, h2, h3, h4, .brand-font {
   background: rgba(229, 169, 60, 0.15);
   box-shadow: 0 0 10px rgba(229, 169, 60, 0.25);
 }
+
+/* ==========================================================================
+   COMING SOON - LUXURY ANNOUNCEMENT BANNER & HERO CARD
+   ========================================================================== */
+
+/* 1. Top Announcement Marquee Strip */
+.top-announcement-banner {
+  background: linear-gradient(90deg, rgba(229, 169, 60, 0.12) 0%, rgba(255, 140, 66, 0.18) 50%, rgba(229, 169, 60, 0.12) 100%);
+  border-bottom: 1px solid rgba(229, 169, 60, 0.28);
+  padding: 8px 14px;
+  position: relative;
+  z-index: 90;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.tab-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #FF8C42 0%, #E5A93C 100%);
+  color: #0b060d;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 12px rgba(229, 169, 60, 0.5);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.tab-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0b060d;
+  animation: tabPulseAnim 1.4s ease-in-out infinite;
+}
+
+@keyframes tabPulseAnim {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.6; }
+}
+
+.tab-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gold-light);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* 2. Luxury COMING SOON Feature Card inside Hero */
+.hero-coming-soon-card {
+  position: relative;
+  margin-top: 18px;
+  width: 100%;
+  max-width: 520px;
+  background: rgba(18, 9, 20, 0.84);
+  border: 1px solid rgba(229, 169, 60, 0.4);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(229, 169, 60, 0.16);
+  text-align: center;
+  animation: cardFadeUp 0.8s ease-out;
+}
+
+.hero-coming-soon-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+}
+
+.hcs-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hcs-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #FF8C42 0%, #E5A93C 100%);
+  color: #0b060d;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 15px rgba(229, 169, 60, 0.5);
+}
+
+.hcs-sub-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(229, 169, 60, 0.12);
+  color: var(--gold-light);
+  border: 1px solid rgba(229, 169, 60, 0.3);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.hcs-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.hcs-desc {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hcs-features {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hcs-feat-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gold-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(229, 169, 60, 0.22);
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.hcs-feat-pill:hover {
+  background: rgba(229, 169, 60, 0.15);
+  border-color: var(--gold-primary);
+}
+
+@keyframes cardFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}

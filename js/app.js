@@ -39,6 +39,11 @@ const I18N = {
     noProducts: "No se encontraron productos para esta búsqueda.",
     resetFilters: "Restablecer Filtros",
     dropsCount: "drops",
+    comingSoonBadge: "COMING SOON",
+    comingSoonMarquee: "✨ COMING SOON • SELECCIÓN SPAIN RESERVE EN CURSO • CATÁLOGO DISPONIBLE MUY PRONTO",
+    comingSoonStatus: "SPAIN RESERVE 2026",
+    comingSoonHeroTitle: "NUEVO DROP • PRÓXIMAMENTE",
+    comingSoonHeroDesc: "Estamos ultimando la selección y el curado artesanal de nuestros lotes exclusivos de Hash, Cali Tops y extracciones Ice-o-Lator. El catálogo oficial estará disponible muy pronto para los socios.",
     nextDropTitle: "PRÓXIMO DROP EN CAMINO",
     nextDropDesc: "Los nuevos lotes artesanales Spain Reserve se encuentran en fase de curado y selección. La disponibilidad se publicará muy pronto.",
     clubDesc: "Colectivo privado con sede en Barcelona. Ofrecemos a nuestros socios productos artesanales de primera calidad: Hash estático, Fresh Frozen, Mousse, Dry Sift, Flores Cali Indoor y extracciones Ice-o-Lator solventless de máxima excelencia.",
@@ -79,6 +84,11 @@ const I18N = {
     noProducts: "No products found matching your search.",
     resetFilters: "Reset Filters",
     dropsCount: "drops",
+    comingSoonBadge: "COMING SOON",
+    comingSoonMarquee: "✨ COMING SOON • SPAIN RESERVE SELECTION IN PROGRESS • RELEASING VERY SOON",
+    comingSoonStatus: "SPAIN RESERVE 2026",
+    comingSoonHeroTitle: "NEW DROP • COMING SOON",
+    comingSoonHeroDesc: "Our exclusive artisanal batches of Hash, Cali Tops, and Ice-o-Lator extractions are currently undergoing final curing and selection. The official collective catalog will launch shortly.",
     nextDropTitle: "NEXT DROP COMING SOON",
     nextDropDesc: "New artisanal Spain Reserve batches are currently curing and undergoing final selection. Available soon.",
     clubDesc: "Private collective based in Barcelona. We offer our members top-shelf artisanal craft: Static hash, Fresh Frozen, Mousse, Dry Sift, Cali Indoor flower, and supreme Ice-o-Lator solventless extractions.",
@@ -119,6 +129,11 @@ const I18N = {
     noProducts: "Nessun prodotto trovato per questa ricerca.",
     resetFilters: "Reset Filtri",
     dropsCount: "drops",
+    comingSoonBadge: "COMING SOON",
+    comingSoonMarquee: "✨ COMING SOON • SELEZIONE SPAIN RESERVE IN CORSO • DISPONIBILE A BREVE",
+    comingSoonStatus: "SPAIN RESERVE 2026",
+    comingSoonHeroTitle: "PROSSIMO DROP • COMING SOON",
+    comingSoonHeroDesc: "Stiamo completando la concia e la selezione artigianale dei lotti esclusivi di Hash, Cali Tops ed estrazioni Ice-o-Lator. Il catalogo ufficiale per i soci aprirà a breve.",
     nextDropTitle: "PROSSIMO DROP IN ARRIVO",
     nextDropDesc: "I nuovi lotti artigianali Spain Reserve sono in fase di concia e selezione. I prodotti saranno disponibili a breve.",
     clubDesc: "Collettivo privato con sede a Barcellona. Offriamo ai nostri membri prodotti artigianali di primissima scelta: Hash statico, Fresh Frozen, Mousse, Dry Sift, Cime Cali Indoor ed estrazioni Ice-o-Lator d'eccellenza.",
@@ -159,6 +174,11 @@ const I18N = {
     noProducts: "Aucun produit trouvé pour cette recherche.",
     resetFilters: "Réinitialiser les Filtres",
     dropsCount: "variétés",
+    comingSoonBadge: "COMING SOON",
+    comingSoonMarquee: "✨ COMING SOON • SÉLECTION SPAIN RESERVE EN COURS • DISPONIBLE TRÈS BIENTÔT",
+    comingSoonStatus: "SPAIN RESERVE 2026",
+    comingSoonHeroTitle: "PROCHAIN DROP • COMING SOON",
+    comingSoonHeroDesc: "Nous finalisons l'affinage et la sélection artisanale de nos récoltes exclusives de Hash, Cali Tops et extractions Ice-o-Lator. Le catalogue officiel ouvrira très prochainement pour les membres.",
     nextDropTitle: "PROCHAIN DROP BIENTÔT",
     nextDropDesc: "Les nouvelles récoltes artisanales Spain Reserve sont actuellement en phase d'affinage et de sélection. Disponibles très prochainement.",
     clubDesc: "Collectif privé basé à Barcelone. Nous proposons à nos membres des produits artisanaux de premier choix : Hash statique, Fresh Frozen, Mousse, Dry Sift, Fleurs Cali Indoor et extractions Ice-o-Lator d'excellence sans solvant.",
@@ -567,6 +587,12 @@ function renderProducts() {
     } else {
       elements.productsGrid.innerHTML = `
         <div class="empty-drop-card" style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: rgba(229,169,60,0.04); border: 1px solid rgba(229,169,60,0.2); border-radius: var(--radius-lg); margin: 10px 0;">
+          <div style="margin-bottom: 14px;">
+            <span class="tab-badge" style="display: inline-flex; font-size: 0.72rem; padding: 4px 12px;">
+              <span class="tab-pulse"></span>
+              <span>${t.comingSoonBadge || 'COMING SOON'}</span>
+            </span>
+          </div>
           <img src="assets/logo-badge.png" alt="Spain Reserve" style="width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--gold-primary); margin-bottom: 14px; box-shadow: 0 0 18px rgba(229,169,60,0.35);">
           <h3 class="brand-font gold-gradient-text" style="font-size: 1.25rem; margin-bottom: 8px;">${t.nextDropTitle || 'PROSSIMO DROP IN ARRIVO'}</h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; max-width: 440px; margin: 0 auto 20px auto;">${t.nextDropDesc || 'I nuovi lotti artigianali Spain Reserve sono in fase di concia e selezione.'}</p>
